@@ -1,4 +1,4 @@
-from units import Temperature, Pressure, getR_constant, Unit
+from units import Temperature, Pressure, getR_constant, Unit, MultiUnit
 
 
 class UnitSystem:
@@ -170,12 +170,11 @@ def peng_robinson(temperature: Temperature, pressure: Pressure,
 
 
 if __name__ == '__main__':
-    T = Temperature(350, "K",3)
-    P = Pressure(350, "kPa")
-    Pcrit = Pressure(350, "kPa")
-    Tcrit = Temperature(350,'K')
-    l = T/P
-    print(l * T)
+    T = Temperature(350, "K")
+    T2 = Temperature(200, 'K')
+    T3 = T - T2
+    print(T3._value)
+    
     
 
     
