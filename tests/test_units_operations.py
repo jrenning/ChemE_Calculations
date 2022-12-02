@@ -1,4 +1,4 @@
-from units import Temperature
+from units import Temperature, MultiUnit, Pressure, BaseUnit, BaseLength
 
 
 def test_temperature_float_addition():
@@ -54,3 +54,28 @@ def test_temperature_comversion2():
     T2 = T.convert_to('R')
     assert(T2._unit == "R")
     assert(T2._value == 1121.67)
+    
+def test_unit_division_cancel():
+    
+    u1 = MultiUnit(value=250, top_half=[BaseUnit("K")], bottom_half=[BaseUnit("kPa")])
+    u2 = MultiUnit(value=2, top_half=[BaseUnit("K")], bottom_half=[BaseUnit("atm")])
+    res = MultiUnit(value=125.0, top_half=[BaseUnit("atm")], bottom_half=[BaseUnit("kPa")])
+    u3 = u1/u2
+    assert(u3.__repr__() == res.__repr__())
+
+def test_unit_division_cancel2():
+    u1 = MultiUnit(value=250, top_half=[BaseUnit("K",2)], bottom_half=[BaseUnit("kPa")])
+    u2 = MultiUnit(value=2, top_half=[BaseUnit("K")], bottom_half=[BaseUnit("atm")])
+    res = MultiUnit(value=125.0, top_half=[BaseUnit("K"), BaseUnit("atm")], bottom_half=[BaseUnit("kPa")])
+    u3 = u1/u2
+    assert(u3.__repr__() == res.__repr__())
+    
+def reynolds_test():
+    d = BaseLength(1, 'm')
+    rho = MultiUnit(1.5,[BaseUnit("kg")],[BaseUnit("m", 3)])
+    v = MultiUnit(2, [BaseUnit("m")], [BaseUnit("s")])
+    mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
+    r = (rho * v * d)/mu
+    print(r)
+    assert(r == 4)
+    

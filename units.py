@@ -1,14 +1,15 @@
 from typing import Literal, TypeVar, Generic, Union, List
 
-
-
 T = TypeVar('T')
+
+
+
 
 
 # TODO implement unit conversions
 # base unit class only meant for units with fractions or multiplications 
 class Unit:
-    def __init__(self, value:float, unit: Generic[T], exponent: int=1):
+    def __init__(self, value:float=0.0,unit: Generic[T]="unitless", exponent: int=1):
         self._value = value
         self._unit = unit
         self._exponent = exponent
@@ -24,13 +25,13 @@ class Unit:
             if (self._unit == other._unit) and (self._exponent == other._exponent):
                 return Unit(self._value + other._value, self._unit, self._exponent)
         elif isinstance(other, Union[int, float]):
-            return Unit(self._value + other, self._unit)
+            return Unit( self._value + other,self._unit)
         else:
             raise TypeError(f"Adding class {self.__class__} and {other.__class__} is unsupported")
     def __sub__(self,other):
         if isinstance(other, self.__class__):
             if (self._unit == other._unit) and (self._exponent == other._exponent):
-                return Unit(self._value - other._value, self._unit, self._exponent)
+                return Unit( self._value - other._value, self._unit,  self._exponent)
         elif isinstance(other, Union[int, float]):
             return Unit(self._value - other, self._unit)
         else:
@@ -69,12 +70,18 @@ class Unit:
             return Unit(self._value**other, self._unit, self._exponent*other)
         else:
             raise TypeError(f"Exponentiations with class {self.__class__} and {other.__class__} is unsupported")
-        
+
+# basic class of unit without a value attached, used for constructing multi units by hand 
+class BaseUnit:
+    def __init__(self,unit: Generic[T], exponent: int = 1):
+        self._unit = unit
+        self._exponent = exponent
 class MultiUnit:
-    def __init__(self, top_half: List[Unit], bottom_half: List[Unit], value: float):
+    def __init__(self, value: float, top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
         self._top_half = top_half
         self._bottom_half = bottom_half
         self._value = value
+        
     def __repr__(self):
         top_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
         if self._bottom_half:
@@ -85,17 +92,55 @@ class MultiUnit:
     def __add__(self, other):
         if self.__class__ == other.__class__:
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
-                return MultiUnit(top_half=self._top_half, bottom_half=self._bottom_half, value= self._value + other._value)
+                return MultiUnit(value= self._value + other._value, top_half=self._top_half, bottom_half=self._bottom_half)
         else:
             raise TypeError(f"Adding class {self.__class__} and {other.__class__} is unsupported")
     def __sub__(self, other):
         if self.__class__ == other.__class__:
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
-                return MultiUnit(top_half=self._top_half, bottom_half=self._bottom_half, value= self._value - other._value)
+                return MultiUnit(value= self._value - other._value, top_half=self._top_half, bottom_half=self._bottom_half)
         else:
             raise TypeError(f"Subtracting class {self.__class__} and {other.__class__} is unsupported")
     def __truediv__(self,other):
+        # same class 
+        if self.__class__ == other.__class__:
+            # same units 
+            if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
+                return self._value / other._value
+            elif isinstance(other, Union[int, float]):
+                return MultiUnit(self._value / other, self._top_half, self._bottom_half)
+            elif other.__class__ == Unit:
+                new_top_half = self._top_half.append(BaseUnit(other._unit, other._exponent))
+                return MultiUnit(self._value * other._value, new_top_half, self._bottom_half)
+            else:
+                new_top_half = self._top_half + other._bottom_half
+                new_bottom_half = self._bottom_half + other._top_half
+                for u1 in new_top_half:
+                    for u2 in new_bottom_half:
+                        if u1._unit == u2._unit:
+                            u1._exponent -= u2._exponent
+                            u2._exponent = 0
+                
+                # update units from the top half           
+                for i, unit in enumerate(new_top_half):
+                    if unit._exponent == 0:
+                        del new_top_half[i]
+                    elif unit._exponent < 0:
+                        del new_top_half[i]
+                        new_bottom_half.append(BaseUnit(unit._unit,-unit._exponent))
+                # update units from the bottom half 
+                for i, unit in enumerate(new_bottom_half):
+                    if unit._exponent == 0:
+                        del new_bottom_half[i]
+                
+                
+                return MultiUnit(self._value / other._value, new_top_half, new_bottom_half)
+    def __mult__(self,other):
         pass
+                    
+                            
+                
+                
     
             
 
@@ -111,7 +156,7 @@ class Temperature(Unit):
         "C": lambda x: x - 273.15,
         "R": lambda x: x * 1.8,
     }
-    def __init__(self, value:float, unit: Literal["K", "C", "F", "R"], exponent: int =1):
+    def __init__(self, value:float, unit: Literal["K", "C", "F", "R"]="K", exponent: int =1):
         super().__init__(value, unit, exponent)
     def convert_to(self,unit):
         if (self._unit == unit):
@@ -131,12 +176,18 @@ class Temperature(Unit):
         
 
 class Pressure(Unit):
-    def __init__(self, value:float, unit: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"],
+    def __init__(self, value:float, unit: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"]="atm",
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
     
 class BaseLength(Unit):
     def __init__(self,value:float, unit: Literal["m", "ft"],
+                 exponent: int = 1):
+        super().__init__(value, unit, exponent)
+        
+        
+class Velocity(Unit):
+    def __init__(self,value:float, unit: Literal["m/s", "ft/s"],
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
         
