@@ -175,8 +175,8 @@ if __name__ == '__main__':
     D = MultiUnit(2, [BaseUnit("m", 2)], [BaseUnit("s")])
     mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
 
-    sc = mu/(rho*D)
-    print(sc)
+    t = 1/mu
+    print(t)
     
     
 

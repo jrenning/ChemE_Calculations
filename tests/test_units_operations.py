@@ -77,7 +77,11 @@ def test_renolyds():
     mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
     i1 = rho * v
     i2 = rho * v * d
-    print(i2)
     r = (i2)/mu
     assert(r == 1.0)
+
+def test_equaility():
+    mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
+    mu2 = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("s"), BaseUnit("m")])
+    assert(mu == mu2)
     

@@ -76,15 +76,52 @@ class BaseUnit:
     def __init__(self,unit: Generic[T], exponent: int = 1):
         self._unit = unit
         self._exponent = exponent
+    def __repr__(self):
+        return f"{self._unit}^{self._exponent}"
     def __eq__(self, other):
         if self._unit == other._unit and self._exponent == other._exponent:
             return True
         return False
+    def __hash__(self):
+        return hash(str(self))
 class MultiUnit:
     def __init__(self, value: float, top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
         self._top_half = top_half
         self._bottom_half = bottom_half
         self._value = value
+    
+    @staticmethod   
+    def cancel_units(top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
+        for u1 in top_half:
+            for u2 in bottom_half:
+                if u1._unit == u2._unit:
+                    u1._exponent -= u2._exponent
+                    u2._exponent = 0
+                    
+        final_top_half = []   
+        final_bottom_half = []          
+        for unit in top_half:
+            if unit._exponent == 0:
+                pass
+            elif unit._exponent < 0:
+                final_bottom_half.append(BaseUnit(unit._unit,-unit._exponent))
+            else:
+                final_top_half.append(unit)
+                
+
+        # update units from the bottom half 
+        for unit in bottom_half:
+            if unit._exponent != 0:
+                final_bottom_half.append(unit)
+        return  final_top_half, final_bottom_half
+    @staticmethod
+    def combine_units(unit_list: List[BaseUnit]):
+        for i, u1 in enumerate(unit_list):
+            for j, u2 in enumerate(unit_list):
+                if u1._unit == u2._unit and i != j:
+                    u1._exponent += u2._exponent
+                    u2._exponent = 0
+        return unit_list
         
     def __repr__(self):
         top_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
@@ -93,6 +130,14 @@ class MultiUnit:
             return f"{self._value} {top_string} / {bottom_string}"
         else:
             return f"{self._value} {top_string}"
+    
+    def __eq__(self, other):
+        if self.__class__ == other.__class__:
+            if self._value == other._value:
+                if set(self._top_half) == set(other._top_half):
+                    if set(self._bottom_half) == set(other._bottom_half):
+                        return True
+        return False
     def __add__(self, other):
         if self.__class__ == other.__class__:
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
@@ -106,119 +151,76 @@ class MultiUnit:
         else:
             raise TypeError(f"Subtracting class {self.__class__} and {other.__class__} is unsupported")
     def __truediv__(self,other):
+        
         # same class 
         if self.__class__ == other.__class__:
             # same units 
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return self._value / other._value
-            elif isinstance(other, Union[int, float]):
-                return MultiUnit(self._value / other, self._top_half, self._bottom_half)
-            elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
-                new_top_half = self._top_half.append(BaseUnit(other._unit, other._exponent))
-                return MultiUnit(self._value * other._value, new_top_half, self._bottom_half)
             else:
                 new_top_half = self._top_half + other._bottom_half
                 new_bottom_half = self._bottom_half + other._top_half
-                for u1 in new_top_half:
-                    for u2 in new_bottom_half:
-                        if u1._unit == u2._unit:
-                            u1._exponent -= u2._exponent
-                            u2._exponent = 0
                 
-                # update units from the top half      
-            final_top_half = []   
-            final_bottom_half = []          
-            for unit in new_top_half:
-                if unit._exponent == 0:
-                    pass
-                elif unit._exponent < 0:
-                    final_bottom_half.append(BaseUnit(unit._unit,-unit._exponent))
-                else:
-                    final_top_half.append(unit)
-                    
-
-            # update units from the bottom half 
-            for unit in new_bottom_half:
-                if unit._exponent != 0:
-                    final_bottom_half.append(unit)
+                final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+                
             
-            # if all units cancel
-            if len(final_top_half) == 0 and len(final_bottom_half) == 0:
-                return self._value / other._value
+                # if all units cancel
+                if len(final_top_half) == 0 and len(final_bottom_half) == 0:
+                    return self._value / other._value
                 
+                return MultiUnit(self._value / other._value, final_top_half, final_bottom_half)
+        elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
+            new_top_half = self._top_half 
+            new_bottom_half = self._bottom_half + [BaseUnit(other._unit, other._exponent)]
+            
+            new_bottom_half = self.combine_units(new_bottom_half)
+                        
+            final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+                    
+            
             return MultiUnit(self._value / other._value, final_top_half, final_bottom_half)
+        
+        elif isinstance(other, Union[int, float]):
+            return MultiUnit(self._value / other, self._top_half, self._bottom_half)
+        else:
+            TypeError(f"Dividing class {self.__class__} and {other.__class__} is unsupported")
+        
     def __mul__(self,other):
+
         if self.__class__ == other.__class__:
             new_top_half = self._top_half + other._top_half
             new_bottom_half = self._bottom_half + other._bottom_half
-            for i, u1 in enumerate(new_top_half):
-                for j, u2 in enumerate(new_top_half):
-                    if u1._unit == u2._unit and i != j:
-                        u1._exponent += u2._exponent
-                        u2._exponent = 0
-            for i, u1 in enumerate(new_bottom_half):
-                for j, u2 in enumerate(new_bottom_half):
-                    if u1._unit == u2._unit and i != j:
-                        u1._exponent += u2._exponent
-                        u2._exponent = 0
             
-            for u1 in new_top_half:
-                for u2 in new_bottom_half:
-                    if u1._unit == u2._unit:
-                        u1._exponent -= u2._exponent
-                        u2._exponent = 0
-                    
-             # update units from the top half 
-            i_to_delete = []          
-            for i, unit in enumerate(new_top_half):
-                if unit._exponent == 0:
-                    i_to_delete.append(i)
-                elif unit._exponent < 0:
-                    i_to_delete.append(i)
-                    new_bottom_half.append(BaseUnit(unit._unit,-unit._exponent))
-                    
-            for i in i_to_delete:
-                del new_top_half[i]
-            i_to_delete.clear()
-            # update units from the bottom half 
-            for i, unit in enumerate(new_bottom_half):
-                if unit._exponent == 0:
-                    i_to_delete.append(i)
-                    
-            for i in i_to_delete:
-                del new_bottom_half[i]
-            return MultiUnit(self._value * other._value, new_top_half, new_bottom_half)
+            new_top_half = self.combine_units(new_top_half)
+            new_bottom_half = self.combine_units(new_bottom_half)
+            
+            final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+            return MultiUnit(self._value * other._value, final_top_half, final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
             new_top_half = self._top_half + [BaseUnit(other._unit, other._exponent)]
             new_bottom_half = self._bottom_half
             
-            for i, u1 in enumerate(new_top_half):
-                for j, u2 in enumerate(new_top_half):
-                    if u1._unit == u2._unit and i != j:
-                        u1._exponent += u2._exponent
-                        u2._exponent = 0
+            new_top_half = self.combine_units(new_top_half)
                         
-            for u1 in new_top_half:               
-                for u2 in new_bottom_half:
-                    if u1._unit == u2._unit:
-                        u1._exponent -= u2._exponent
-                        u2._exponent = 0
-                    
-                            # update units from the top half           
-            for i, unit in enumerate(new_top_half):
-                if unit._exponent == 0:
-                    del new_top_half[i]
-                elif unit._exponent < 0:
-                    del new_top_half[i]
-                    new_bottom_half.append(BaseUnit(unit._unit,-unit._exponent))
-            # update units from the bottom half 
-            for i, unit in enumerate(new_bottom_half):
-                if unit._exponent == 0:
-                    del new_bottom_half[i] 
+            final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
                             
             return MultiUnit(self._value * other._value, new_top_half, new_bottom_half)
+        elif isinstance(other, Union[int, float]):
+            return MultiUnit(self._value * other, self._top_half, self._bottom_half)
+        else:
+            TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
                 
-    
+    def __rtruediv__(self,other):
+        if isinstance(other, Union[int, float]):
+            return MultiUnit(other/self._value,self._bottom_half, self._top_half)
+        else:
+            raise TypeError(f"Dividing class {other.__class__} and {self.__class__} is unsupported")
+    def __rmul__(self, other):
+        if isinstance(other, Union[int, float]):
+            return MultiUnit(other * self._value,self._top_half, self._bottom_half)
+        else:
+            raise TypeError(f"Multiplying class {other.__class__} and {self.__class__} is unsupported")
+            
             
 
 class Temperature(Unit):
