@@ -20,6 +20,13 @@ class Unit:
         else:
             return f"{self._value} {self._unit}^{self._exponent}"
         
+    def __eq__(self, other)-> bool:
+        if self.__class__ == other.__class__ or other.__class__ == Unit:
+            if self._value == other._value:
+                if self._unit == other._unit:
+                    if self._exponent == other._exponent:
+                        return True
+        return False
     def __add__(self, other):
         if isinstance(other, self.__class__):
             if (self._unit == other._unit) and (self._exponent == other._exponent):
@@ -204,7 +211,7 @@ class MultiUnit:
                         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
                             
-            return MultiUnit(self._value * other._value, new_top_half, new_bottom_half)
+            return MultiUnit(self._value * other._value, final_top_half, final_bottom_half)
         elif isinstance(other, Union[int, float]):
             return MultiUnit(self._value * other, self._top_half, self._bottom_half)
         else:
@@ -263,12 +270,21 @@ class BaseLength(Unit):
     def __init__(self,value:float, unit: Literal["m", "ft"],
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
-        
-        
-class Velocity(Unit):
-    def __init__(self,value:float, unit: Literal["m/s", "ft/s"],
-                 exponent: int = 1):
+
+class Time(Unit):
+    def __init__(self,value:float, unit: Literal["s", "min", "hr", "day"],
+                exponent: int = 1):
         super().__init__(value, unit, exponent)
+    
+        
+class Velocity(MultiUnit):
+    def __init__(self,value:float, length_unit: Literal["m", "ft"], time_unit: Literal["s", "min", "hr", "day"],
+                 exponent: int = 1):
+        super().__init__(value, top_half=[BaseUnit(length_unit._unit)], bottom_half=[BaseUnit(time_unit._unit)])
+
+
+
+
         
 def getR_constant(temperature_units: Literal["K", "C", "F", "R"],
                   volume_units: Literal["cm^3", "m^3", "L"],
