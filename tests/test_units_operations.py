@@ -70,12 +70,14 @@ def test_unit_division_cancel2():
     u3 = u1/u2
     assert(u3.__repr__() == res.__repr__())
     
-def reynolds_test():
+def test_renolyds():
     d = BaseLength(1, 'm')
     rho = MultiUnit(1.5,[BaseUnit("kg")],[BaseUnit("m", 3)])
     v = MultiUnit(2, [BaseUnit("m")], [BaseUnit("s")])
     mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
-    r = (rho * v * d)/mu
-    print(r)
-    assert(r == 4)
+    i1 = rho * v
+    i2 = rho * v * d
+    print(i2)
+    r = (i2)/mu
+    assert(r == 1.0)
     

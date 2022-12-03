@@ -172,10 +172,11 @@ def peng_robinson(temperature: Temperature, pressure: Pressure,
 if __name__ == '__main__':
     d = BaseLength(1, 'm')
     rho = MultiUnit(1.5,[BaseUnit("kg")],[BaseUnit("m", 3)])
-    v = MultiUnit(2, [BaseUnit("m")], [BaseUnit("s")])
+    D = MultiUnit(2, [BaseUnit("m", 2)], [BaseUnit("s")])
     mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
-    r = (rho * v * d)/mu
-    print(r)
+
+    sc = mu/(rho*D)
+    print(sc)
     
     
 
