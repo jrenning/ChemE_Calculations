@@ -270,12 +270,12 @@ class MultiUnit:
         final_bottom_exponents = []
         for utop in top_units:
             if "^" in utop:
-                exponent, unit = utop.split("^")
+                unit, exponent = utop.split("^")
             else:
                 exponent = 1
                 unit = utop
             final_top_units.append(unit)
-            final_top_exponents.append(exponent)
+            final_top_exponents.append(int(exponent))
         for ubot in bottom_units:
             if "^" in ubot:
                 unit, exponent = ubot.split("^")
