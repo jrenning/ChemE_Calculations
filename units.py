@@ -7,7 +7,9 @@ TemperateUnits = ["K", "C", "R", "F"]
 LengthUnit = Literal["m", "ft"]
 
 DECONSTRUCTABLE_UNITS = {
-    "Pa": "kg / m*s^2",
+    "Pa": "kg/m*s^2",
+    "W": "J/s",
+    
     
 }
 
@@ -191,13 +193,64 @@ class MultiUnit:
         
         return new_top_list, new_bottom_list
     
-    @staticmethod
-    def simplify_units(top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
+    def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
         top_unit_list = [x.__repr__() for x in top_list]
         bottom_unit_list = [x.__repr__() for x in bottom_list]
         # get possible combos
         possible_tops = powerset(top_unit_list)
         possible_bottoms = powerset(bottom_unit_list)
+        
+        
+        tops = ["*".join(x) for x in possible_tops]
+        bottoms = ["*".join(x) for x in possible_bottoms]
+        
+        # add flipped versions of everything
+        topy_copy = tops.copy()
+        for top in topy_copy:
+            if "*" in top:
+                split = top.split("*")
+                if len(split) == 2:
+                    bottoms.append(f"{split[1]}*{split[0]}")
+        bot_copy = bottoms.copy()   
+        for bot in bot_copy:
+            if "*" in bot:
+                split = bot.split("*")
+                # no composite unit has a length of units greater than 2
+                if len(split) == 2:
+                    bottoms.append(f"{split[1]}*{split[0]}")
+                
+                
+        combos = [f"{x}/{y}" for x in tops for y in bottoms]
+        final_top = []
+        final_bottom = []
+        for combo in combos:
+            if combo in DECONSTRUCTABLE_UNITS.values():
+                # get key of the value
+                value = [i for i in DECONSTRUCTABLE_UNITS if DECONSTRUCTABLE_UNITS[i]==combo]
+                (final_top_units, final_top_exponents,
+                 final_bottom_units, final_bottom_exponents) = self.parse_units(combo)
+                top_base_units = [BaseUnit(x,y) for x in final_top_units for y in final_top_exponents]
+                bottom_base_units = [BaseUnit(x,y) for x in final_bottom_units for y in final_bottom_exponents]
+                for u1 in top_list:
+                    if u1 not in top_base_units:
+                        final_top.append(u1)
+                for u2 in bottom_list:
+                    if u2 not in bottom_base_units:
+                        final_bottom.append(u2)
+                # append new simplified unit
+                final_top.append(BaseUnit(value[0]))
+                break
+        # if no matches
+        else:
+            final_top = top_list
+            final_bottom = bottom_list
+            
+        return final_top, final_bottom
+        
+        
+                
+            
+            
         
     @staticmethod
     def parse_units(unit_string: str):
@@ -269,7 +322,7 @@ class MultiUnit:
                 
                 final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
                 
-            
+                final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
                 # if all units cancel
                 if len(final_top_half) == 0 and len(final_bottom_half) == 0:
                     return self._value / other._value
@@ -284,6 +337,8 @@ class MultiUnit:
             new_bottom_half = self.combine_units(new_bottom_half)
                         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+            
+            final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
             
             # if all units cancel
             if len(final_top_half) == 0 and len(final_bottom_half) == 0:
