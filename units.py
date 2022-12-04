@@ -1,11 +1,15 @@
 from typing import Literal, TypeVar, Generic, Union, List
+from utility import powerset
 
 T = TypeVar('T')
 
 TemperateUnits = ["K", "C", "R", "F"]
 LengthUnit = Literal["m", "ft"]
 
-
+DECONSTRUCTABLE_UNITS = {
+    "Pa": "kg / m*s^2",
+    
+}
 
 
 
@@ -106,7 +110,10 @@ class BaseUnit:
         self._unit = unit
         self._exponent = exponent
     def __repr__(self):
-        return f"{self._unit}^{self._exponent}"
+        if self._exponent != 1:
+            return f"{self._unit}^{self._exponent}"
+        else:
+            return f"{self._unit}"
     def __eq__(self, other):
         if self._unit == other._unit and self._exponent == other._exponent:
             return True
@@ -151,6 +158,76 @@ class MultiUnit:
                     u1._exponent += u2._exponent
                     u2._exponent = 0
         return unit_list
+    
+    def deconstruct_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
+        new_top_list = []
+        new_bottom_list = []
+        
+        for unit in top_list:
+            if unit._unit in DECONSTRUCTABLE_UNITS.keys():
+                new_string = DECONSTRUCTABLE_UNITS[unit._unit]
+                (final_top_units, final_top_exponents,
+                 final_bottom_units, final_bottom_exponents) = self.parse_units(new_string)
+                for unit, exponent in zip(final_top_units, final_top_exponents):
+                    new_top_list.append(BaseUnit(unit, exponent))
+                for unit, exponent in zip(final_bottom_units, final_bottom_exponents):
+                    new_bottom_list.append(BaseUnit(unit, exponent))
+            else:
+                new_top_list.append(unit)
+                
+        for unit in bottom_list:
+            if unit._unit in DECONSTRUCTABLE_UNITS.keys():
+                new_string = DECONSTRUCTABLE_UNITS[unit._unit]
+
+                (final_top_units, final_top_exponents,
+                 final_bottom_units, final_bottom_exponents) = self.parse_units(new_string)
+                for unit, exponent in zip(final_top_units, final_top_exponents):
+                    new_bottom_list.append(BaseUnit(unit, exponent))
+                for unit, exponent in zip(final_bottom_units, final_bottom_exponents):
+                    new_top_list.append(BaseUnit(unit, exponent))
+            else:
+                new_bottom_list.append(unit)
+
+        
+        return new_top_list, new_bottom_list
+    
+    @staticmethod
+    def simplify_units(top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
+        top_unit_list = [x.__repr__() for x in top_list]
+        bottom_unit_list = [x.__repr__() for x in bottom_list]
+        # get possible combos
+        possible_tops = powerset(top_unit_list)
+        possible_bottoms = powerset(bottom_unit_list)
+        
+    @staticmethod
+    def parse_units(unit_string: str):
+        top_half, bottom_half = unit_string.split("/")
+        top_units = top_half.strip().split("*")
+        bottom_units = bottom_half.strip().split("*")
+        final_top_units = []
+        final_top_exponents = []
+        final_bottom_units = []
+        final_bottom_exponents = []
+        for utop in top_units:
+            if "^" in utop:
+                exponent, unit = utop.split("^")
+            else:
+                exponent = 1
+                unit = utop
+            final_top_units.append(unit)
+            final_top_exponents.append(exponent)
+        for ubot in bottom_units:
+            if "^" in ubot:
+                unit, exponent = ubot.split("^")
+            else:
+                exponent = 1
+                unit = ubot
+            final_bottom_units.append(unit)
+            final_bottom_exponents.append(int(exponent))
+        
+        return final_top_units, final_top_exponents, final_bottom_units, final_bottom_exponents
+        
+    
         
     def __repr__(self):
         top_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
@@ -202,10 +279,15 @@ class MultiUnit:
             new_top_half = self._top_half 
             new_bottom_half = self._bottom_half + [BaseUnit(other._unit, other._exponent)]
             
+            new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+            
             new_bottom_half = self.combine_units(new_bottom_half)
                         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
-                    
+            
+            # if all units cancel
+            if len(final_top_half) == 0 and len(final_bottom_half) == 0:
+                return self._value / other._value
             
             return MultiUnit(self._value / other._value, final_top_half, final_bottom_half)
         
