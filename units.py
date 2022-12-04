@@ -2,6 +2,9 @@ from typing import Literal, TypeVar, Generic, Union, List
 
 T = TypeVar('T')
 
+TemperateUnits = ["K", "C", "R", "F"]
+LengthUnit = Literal["m", "ft"]
+
 
 
 
@@ -77,6 +80,25 @@ class Unit:
             return Unit(self._value**other, self._unit, self._exponent*other)
         else:
             raise TypeError(f"Exponentiations with class {self.__class__} and {other.__class__} is unsupported")
+    def convert_to(self,unit, inplace=False):
+        if (self._unit == unit):
+            return self
+        if (unit == self.standard):
+            val = self.to_standard_conversions[self._unit](self._value)
+            if inplace:
+                return self.__class__.__init__(self, val, unit, self._exponent)
+            return self.__class__(val, unit, self._exponent)
+        elif (self._unit == self.standard):
+            val = self.from_standard_conversions[unit](self._value)
+            if inplace:
+                return self.__class__.__init__(self, val, unit, self._exponent)
+            return self.__class__(val, unit, self._exponent)
+        else:
+            standard_val = self.to_standard_conversions[self._unit](self._value)
+            val = self.from_standard_conversions[unit](standard_val)
+            if inplace:
+                return self.__class__.__init__(self, val, unit, self._exponent)
+            return self.__class__(val, unit, self._exponent)
 
 # basic class of unit without a value attached, used for constructing multi units by hand 
 class BaseUnit:
@@ -243,46 +265,89 @@ class Temperature(Unit):
         "R": lambda x: x * 1.8,
     }
     def __init__(self, value:float, unit: Literal["K", "C", "F", "R"]="K", exponent: int =1):
+        if unit not in TemperateUnits:
+            raise TypeError(f"The unit of {unit} is not valid for temperature")
         super().__init__(value, unit, exponent)
-    def convert_to(self,unit):
-        if (self._unit == unit):
-            return self
-        if (unit == self.standard):
-            val = self.to_standard_conversions[self._unit](self._value)
-            return Temperature(val, unit, self._exponent)
-        elif (self._unit == self.standard):
-            val = self.from_standard_conversions[unit](self._value)
-            return Temperature(val, unit, self._exponent)
-        else:
-            standard_val = self.to_standard_conversions[self._unit](self._value)
-            val = self.from_standard_conversions[unit](standard_val)
-            return Temperature(val, unit, self._exponent)
+
         
             
         
 
 class Pressure(Unit):
-    def __init__(self, value:float, unit: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"]="atm",
+    standard: str = "atm"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "Pa": lambda x: x / 101325,
+        "bar": lambda x: x*0.986923,
+        "mmHg": lambda x: x/760,
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "Pa": lambda x: x*101325,
+        "bar": lambda x: x*1.01325,
+        "mmHg": lambda x: x * 760,
+    }
+    def __init__(self, value:float, unit: Literal["Pa", "kPa", "bar", "atm", "mmHg"]="atm",
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
     
 class BaseLength(Unit):
+    standard: str = "m"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "ft": lambda x: x*0.3048
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "ft": lambda x: x*3.28084
+    }
     def __init__(self,value:float, unit: Literal["m", "ft"],
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
 
 class Time(Unit):
+    standard: str = "s"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "min": lambda x: x*60,
+        "hr": lambda x: x*3600,
+        "day": lambda x: x*(3600*24)
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "min": lambda x: x/60,
+        "hr": lambda x: x/3600,
+        "day": lambda x: x/(3600*24)
+    }
     def __init__(self,value:float, unit: Literal["s", "min", "hr", "day"],
+                exponent: int = 1):
+        super().__init__(value, unit, exponent)
+        
+class Energy(Unit):
+    standard: str = "J"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "BTU": lambda x: x*1055.056
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "BTU": lambda x: x/1055.056
+    }
+    def __init__(self,value:float, unit: Literal["J", "BTU"],
                 exponent: int = 1):
         super().__init__(value, unit, exponent)
     
         
 class Velocity(MultiUnit):
-    def __init__(self,value:float, length_unit: Literal["m", "ft"], time_unit: Literal["s", "min", "hr", "day"],
-                 exponent: int = 1):
-        super().__init__(value, top_half=[BaseUnit(length_unit._unit)], bottom_half=[BaseUnit(time_unit._unit)])
+    def __init__(self,value:float, length_unit: Literal["m", "ft"], time_unit: Literal["s", "min", "hr", "day"]):
+        super().__init__(value, top_half=[BaseUnit(length_unit)], bottom_half=[BaseUnit(time_unit)])
 
 
+class ThermalConductivity(MultiUnit):
+        def __init__(self,value:float, energy_unit: Literal["J", "BTU"], time_unit: Literal["s", "hr"],
+                     length_unit: LengthUnit, temperature_unit: Literal['K', 'C', 'F', 'R']):
+            super().__init__(value, top_half=[BaseUnit(energy_unit)], bottom_half=[BaseUnit(time_unit), BaseUnit(length_unit), BaseUnit(temperature_unit)])
+    
 
 
         
