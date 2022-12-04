@@ -123,7 +123,14 @@ class BaseUnit:
     def __hash__(self):
         return hash(str(self))
 class MultiUnit:
-    def __init__(self, value: float, top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
+    def __init__(self, value: float, unit: str="", *,  top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):
+        # if passed a unit construct the class from it 
+        if unit:
+            (final_top_units, final_top_exponents,
+                final_bottom_units, final_bottom_exponents) = self.parse_units(unit)
+            top_half = [BaseUnit(x,y) for x,y in zip(final_top_units, final_top_exponents)]
+            bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
+        # else use provided keys
         self._top_half = top_half
         self._bottom_half = bottom_half
         self._value = value
@@ -327,7 +334,11 @@ class MultiUnit:
                 if len(final_top_half) == 0 and len(final_bottom_half) == 0:
                     return self._value / other._value
                 
-                return MultiUnit(self._value / other._value, final_top_half, final_bottom_half)
+                #if just left with one unit
+                if len(final_top_half) == 1 and len(final_bottom_half) == 0:
+                    return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                
+                return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
             new_top_half = self._top_half 
             new_bottom_half = self._bottom_half + [BaseUnit(other._unit, other._exponent)]
@@ -344,10 +355,14 @@ class MultiUnit:
             if len(final_top_half) == 0 and len(final_bottom_half) == 0:
                 return self._value / other._value
             
-            return MultiUnit(self._value / other._value, final_top_half, final_bottom_half)
+            #if just left with one unit
+            if len(final_top_half) == 1 and len(final_bottom_half) == 0:
+                return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+            
+            return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         
         elif isinstance(other, Union[int, float]):
-            return MultiUnit(self._value / other, self._top_half, self._bottom_half)
+            return MultiUnit(self._value / other, top_half=self._top_half, bottom_half=self._bottom_half)
         else:
             TypeError(f"Dividing class {self.__class__} and {other.__class__} is unsupported")
         
@@ -361,7 +376,7 @@ class MultiUnit:
             new_bottom_half = self.combine_units(new_bottom_half)
             
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
-            return MultiUnit(self._value * other._value, final_top_half, final_bottom_half)
+            return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
             new_top_half = self._top_half + [BaseUnit(other._unit, other._exponent)]
             new_bottom_half = self._bottom_half
@@ -369,21 +384,25 @@ class MultiUnit:
             new_top_half = self.combine_units(new_top_half)
                         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+            
+            #if just left with one unit
+            if len(final_top_half) == 1 and len(final_bottom_half) == 0:
+                return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
                             
-            return MultiUnit(self._value * other._value, final_top_half, final_bottom_half)
+            return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif isinstance(other, Union[int, float]):
-            return MultiUnit(self._value * other, self._top_half, self._bottom_half)
+            return MultiUnit(self._value * other, top_half=self._top_half, bottom_half=self._bottom_half)
         else:
             TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
                 
     def __rtruediv__(self,other):
         if isinstance(other, Union[int, float]):
-            return MultiUnit(other/self._value,self._bottom_half, self._top_half)
+            return MultiUnit(other/self._value,top_half=self._bottom_half, bottom_half=self._top_half)
         else:
             raise TypeError(f"Dividing class {other.__class__} and {self.__class__} is unsupported")
     def __rmul__(self, other):
         if isinstance(other, Union[int, float]):
-            return MultiUnit(other * self._value,self._top_half, self._bottom_half)
+            return MultiUnit(other * self._value,top_half=self._top_half, bottom_half=self._bottom_half)
         else:
             raise TypeError(f"Multiplying class {other.__class__} and {self.__class__} is unsupported")
             
@@ -480,10 +499,7 @@ class Velocity(MultiUnit):
         super().__init__(value, top_half=[BaseUnit(length_unit)], bottom_half=[BaseUnit(time_unit)])
 
 
-class ThermalConductivity(MultiUnit):
-        def __init__(self,value:float, energy_unit: Literal["J", "BTU"], time_unit: Literal["s", "hr"],
-                     length_unit: LengthUnit, temperature_unit: Literal['K', 'C', 'F', 'R']):
-            super().__init__(value, top_half=[BaseUnit(energy_unit)], bottom_half=[BaseUnit(time_unit), BaseUnit(length_unit), BaseUnit(temperature_unit)])
+
     
 
 

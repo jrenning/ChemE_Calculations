@@ -1,4 +1,4 @@
-from units import Temperature, MultiUnit, Pressure, BaseUnit, BaseLength
+from units import Temperature, MultiUnit, Pressure, BaseUnit, BaseLength, Time, Unit, Velocity
 import pytest
 
 @pytest.mark.parametrize("operand1,operand2,expected", [(Temperature(350, 'K'),50,Temperature(400, 'K')),
@@ -17,7 +17,7 @@ def test_unit_subtraction(operand1, operand2, expected):
 
 @pytest.mark.parametrize("operand1,operand2,expected", [(Temperature(350, 'K'),2,Temperature(700, 'K')),
                                                         (Temperature(350, 'K'), Temperature(2, 'K'), Temperature(700, 'K', 2)),
-                                                        ])
+                                                        (MultiUnit(350, "J/s"), Unit(1, "s"), Unit(350, "J"))])
 def test_unit_multiplication(operand1, operand2, expected):
     assert(operand1 * operand2 == expected)
 
@@ -44,14 +44,14 @@ def test_temperature_comversion2():
     
 def test_renolyds():
     d = BaseLength(1, 'm')
-    rho = MultiUnit(1.5,[BaseUnit("kg")],[BaseUnit("m", 3)])
-    v = MultiUnit(2, [BaseUnit("m")], [BaseUnit("s")])
-    mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
+    rho = MultiUnit(1.5,"kg/m^3")
+    v = MultiUnit(2, "m/s")
+    mu = MultiUnit(3, "kg/m*s")
     r = (rho*v*d)/mu
     assert(r == 1.0)
 
-def test_equaility():
-    mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
-    mu2 = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("s"), BaseUnit("m")])
-    assert(mu == mu2)
+# def test_equaility():
+#     mu = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("m"), BaseUnit("s")])
+#     mu2 = MultiUnit(3, [BaseUnit("kg")], [BaseUnit("s"), BaseUnit("m")])
+#     assert(mu == mu2)
     
