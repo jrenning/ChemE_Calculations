@@ -12,13 +12,32 @@ DECONSTRUCTABLE_UNITS = {
     
     
 }
-
-
-
-# TODO implement unit conversions
-# base unit class only meant for units with fractions or multiplications 
+ 
 class Unit:
+    """
+    A class meant to represent a basic unit with a value and exponent
+    
+    Attributes
+    ----------
+    :param value: float
+        the value of the unit
+    :param unit: str
+        the string representing the unit
+    :param exponent: int = 1
+        the number representing the exponent of the unit ie m^2
+    
+    
+    """
     def __init__(self, value:float=0.0,unit: Generic[T]="unitless", exponent: int=1):
+        """Constructor for the Unit class
+
+        :param value: value of the unit, defaults to 0.0
+        :type value: float, optional
+        :param unit: unit string, defaults to "unitless"
+        :type unit: Generic[T], optional
+        :param exponent: exponent of the unit, defaults to 1
+        :type exponent: int, optional
+        """
         self._value = value
         self._unit = unit
         self._exponent = exponent
@@ -108,6 +127,10 @@ class Unit:
 
 # basic class of unit without a value attached, used for constructing multi units by hand 
 class BaseUnit:
+    """Class representing a unit without a value, usually just for internal use
+    
+    
+    """
     def __init__(self,unit: Generic[T], exponent: int = 1):
         self._unit = unit
         self._exponent = exponent
@@ -122,14 +145,13 @@ class BaseUnit:
         return False
     def __hash__(self):
         return hash(str(self))
+    
+    
 class MultiUnit:
     def __init__(self, value: float, unit: str="", *,  top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):
         # if passed a unit construct the class from it 
         if unit:
-            (final_top_units, final_top_exponents,
-                final_bottom_units, final_bottom_exponents) = self.parse_units(unit)
-            top_half = [BaseUnit(x,y) for x,y in zip(final_top_units, final_top_exponents)]
-            bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
+            top_half, bottom_half = self.parse_units(unit)
         # else use provided keys
         self._top_half = top_half
         self._bottom_half = bottom_half
@@ -175,12 +197,9 @@ class MultiUnit:
         for unit in top_list:
             if unit._unit in DECONSTRUCTABLE_UNITS.keys():
                 new_string = DECONSTRUCTABLE_UNITS[unit._unit]
-                (final_top_units, final_top_exponents,
-                 final_bottom_units, final_bottom_exponents) = self.parse_units(new_string)
-                for unit, exponent in zip(final_top_units, final_top_exponents):
-                    new_top_list.append(BaseUnit(unit, exponent))
-                for unit, exponent in zip(final_bottom_units, final_bottom_exponents):
-                    new_bottom_list.append(BaseUnit(unit, exponent))
+                top_half, bottom_half = self.parse_units(new_string)
+                new_top_list.extend(top_half)
+                new_bottom_list.extend(bottom_half)
             else:
                 new_top_list.append(unit)
                 
@@ -188,12 +207,9 @@ class MultiUnit:
             if unit._unit in DECONSTRUCTABLE_UNITS.keys():
                 new_string = DECONSTRUCTABLE_UNITS[unit._unit]
 
-                (final_top_units, final_top_exponents,
-                 final_bottom_units, final_bottom_exponents) = self.parse_units(new_string)
-                for unit, exponent in zip(final_top_units, final_top_exponents):
-                    new_bottom_list.append(BaseUnit(unit, exponent))
-                for unit, exponent in zip(final_bottom_units, final_bottom_exponents):
-                    new_top_list.append(BaseUnit(unit, exponent))
+                extra_top_list, extra_bottom_list = self.parse_units(new_string)
+                new_bottom_list.extend(extra_top_list)
+                new_top_list.extend(extra_bottom_list)
             else:
                 new_bottom_list.append(unit)
 
@@ -234,10 +250,7 @@ class MultiUnit:
             if combo in DECONSTRUCTABLE_UNITS.values():
                 # get key of the value
                 value = [i for i in DECONSTRUCTABLE_UNITS if DECONSTRUCTABLE_UNITS[i]==combo]
-                (final_top_units, final_top_exponents,
-                 final_bottom_units, final_bottom_exponents) = self.parse_units(combo)
-                top_base_units = [BaseUnit(x,y) for x in final_top_units for y in final_top_exponents]
-                bottom_base_units = [BaseUnit(x,y) for x in final_bottom_units for y in final_bottom_exponents]
+                top_base_units, bottom_base_units = self.parse_units(combo)
                 for u1 in top_list:
                     if u1 not in top_base_units:
                         final_top.append(u1)
@@ -285,7 +298,9 @@ class MultiUnit:
             final_bottom_units.append(unit)
             final_bottom_exponents.append(int(exponent))
         
-        return final_top_units, final_top_exponents, final_bottom_units, final_bottom_exponents
+        top_half = [BaseUnit(x,y) for x,y in zip(final_top_units, final_top_exponents)]
+        bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
+        return top_half, bottom_half
         
     
         
@@ -407,7 +422,6 @@ class MultiUnit:
             raise TypeError(f"Multiplying class {other.__class__} and {self.__class__} is unsupported")
             
             
-
 class Temperature(Unit):
     standard: str = "K"
     to_standard_conversions = {
@@ -426,9 +440,6 @@ class Temperature(Unit):
         super().__init__(value, unit, exponent)
 
         
-            
-        
-
 class Pressure(Unit):
     standard: str = "atm"
     # from target unit to standard unit 
@@ -492,14 +503,50 @@ class Energy(Unit):
     def __init__(self,value:float, unit: Literal["J", "BTU"],
                 exponent: int = 1):
         super().__init__(value, unit, exponent)
-    
-        
+
+class Mass(Unit):
+    standard: str = "kg"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "lb": lambda x: x*0.453592
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "lb": lambda x: x*2.20462
+    }
+    def __init__(self,value:float, unit: Literal["kg", "lb"],
+                exponent: int = 1):
+        super().__init__(value, unit, exponent)
+          
+          
+class Current(Unit):
+    standard: str = "A"
+    def __init__(self,value:float, unit: Literal["A"],
+                exponent: int = 1):
+        super().__init__(value, unit, exponent)
 class Velocity(MultiUnit):
     def __init__(self,value:float, length_unit: Literal["m", "ft"], time_unit: Literal["s", "min", "hr", "day"]):
         super().__init__(value, top_half=[BaseUnit(length_unit)], bottom_half=[BaseUnit(time_unit)])
 
 
-
+class DynamicViscosity(MultiUnit):
+    standard: str = "cP"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "kg/m*s": lambda x: x,
+        "kg/cm*s": lambda x: x*100
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "kg/m*s": lambda x: x,
+        "kg/cm*s": lambda x: x/100
+    }
+    def __init__(self, value, unit=Literal["cP", "kg/m*s", "cm/m*s"]):
+        if unit == "cP":
+            unit_string = "kg/m*s"
+            super().__init__(value/1000,unit_string)
+        else:
+            super().__init__(value, unit)
     
 
 
