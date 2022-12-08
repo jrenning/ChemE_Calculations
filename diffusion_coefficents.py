@@ -1,7 +1,7 @@
-from units import Temperature, MultiUnit
+from units import Temperature, MultiUnit, LengthUnit
 
 class DiffusionCoefficient(MultiUnit):
-    def __init__(value: float, ):
+    def __init__(value: float, length_unit: LengthUnit, time_unit):
         pass
         
 

@@ -170,7 +170,10 @@ def peng_robinson(temperature: Temperature, pressure: Pressure,
 
 
     
-    
+if __name__ == "__main__":
+    T = Temperature(50, 'K')
+    T2 = Temperature(10, 'K')
+    T3 = T * T2
 
     
     

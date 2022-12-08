@@ -1,10 +1,41 @@
 from typing import Literal, TypeVar, Generic, Union, List
 from utility import powerset
 from copy import deepcopy
+from functools import reduce
 
 T = TypeVar('T')
 
+# milli. centi, deci, kilo, mega
+prefixes = ["m", "c", "d", "k", "M"]
+
 TemperateUnits = ["K", "C", "R", "F"]
+TemperatureDict = {k:"Temperature" for k in TemperateUnits}
+
+LengthUnits = ["m"]
+LengthUnits = [f"{x}{y}" for x in prefixes for y in LengthUnits]
+LengthUnits.extend(["m", "ft"])
+LengthDict = { k:"Length" for k in LengthUnits }
+
+CurrentUnits = ["A"]
+CurrentDict = {"A":"Current"}
+
+TimeUnits = ["s", "min", "hr", "day"]
+TimeDict = {k:"Time" for k in TimeUnits}
+
+MassUnits = ["g"]
+MassUnits = [f"{x}{y}" for x in prefixes for y in MassUnits]
+MassUnits.extend(["g", "lb"])
+MassDict = { k:"Mass" for k in MassUnits }
+
+
+UNIT_REGISTRY = {
+    **TemperatureDict,
+    **LengthDict,
+    **MassDict,
+    **CurrentDict,
+    **TimeDict
+}
+
 LengthUnit = Literal["m", "ft"]
 
 DECONSTRUCTABLE_UNITS = {
@@ -59,17 +90,17 @@ class Unit:
     def __add__(self, other):
         if isinstance(other, self.__class__):
             if (self._unit == other._unit) and (self._exponent == other._exponent):
-                return Unit(self._value + other._value, self._unit, self._exponent)
+                return self.__class__(self._value + other._value, self._unit, self._exponent)
         elif isinstance(other, Union[int, float]):
-            return Unit( self._value + other,self._unit)
+            return self.__class__( self._value + other,self._unit)
         else:
             raise TypeError(f"Adding class {self.__class__} and {other.__class__} is unsupported")
     def __sub__(self,other):
         if isinstance(other, self.__class__):
             if (self._unit == other._unit) and (self._exponent == other._exponent):
-                return Unit( self._value - other._value, self._unit,  self._exponent)
+                return self.__class__( self._value - other._value, self._unit,  self._exponent)
         elif isinstance(other, Union[int, float]):
-            return Unit(self._value - other, self._unit)
+            return self.__class__(self._value - other, self._unit)
         else:
             raise TypeError(f"Subtracting class {self.__class__} and {other.__class__} is unsupported")
     def __truediv__(self, other):
@@ -80,44 +111,44 @@ class Unit:
                 if exponent_remainder == 0:
                     return self._value / other._value
                 else:
-                    return Unit(self._value / other._value, self._unit, exponent_remainder)
+                    return self.__class__(self._value / other._value, self._unit, exponent_remainder)
             else:
                 return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
         # if both units
         elif other.__class__.__bases__[0] == Unit:
             return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
         elif isinstance(other, Union[int, float]):
-            return Unit(self._value / other, self._unit)
+            return self.__class__(self._value / other, self._unit)
         else:
             raise TypeError(f"Dividing class {self.__class__} and {other.__class__} is unsupported")
     def __mul__(self, other):
         # same class 
         if self.__class__ == other.__class__:
             if (self._unit == other._unit):
-                    return Unit(self._value * other._value, self._unit, self._exponent + other._exponent)
+                    return self.__class__(self._value * other._value, self._unit, self._exponent + other._exponent)
         # if both units
         if other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
                 return MultiUnit(top_half=[self, other], bottom_half=None, value=self._value * other._value)
         elif isinstance(other, Union[int, float]):
-            return Unit(self._value * other, self._unit)
+            return self.__class__(self._value * other, self._unit)
         else:
             raise TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
     
     def __rmul__(self, other):
         if isinstance(other, Union[int, float]):
-            return Unit(self._value * other, self._unit)
+            return self.__class__(self._value * other, self._unit)
         else:
             raise TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
             
     def __pow__(self, other):
         if isinstance(other, Union[int, float]):
-            return Unit(self._value**other, self._unit, self._exponent*other)
+            return self.__class__(self._value**other, self._unit, self._exponent*other)
         else:
             raise TypeError(f"Exponentiations with class {self.__class__} and {other.__class__} is unsupported")
     
     def __neg__(self):
-        return Unit(-self._value, self._unit, self._exponent)
-    def convert_to(self,unit, inplace=False):
+        return self.__class__(-self._value, self._unit, self._exponent)
+    def convert_to(self,unit: str, inplace: bool =False):
         if (self._unit == unit):
             return self
         if (unit == self.standard):
@@ -131,7 +162,11 @@ class Unit:
                 return self.__class__.__init__(self, val, unit, self._exponent)
             return self.__class__(val, unit, self._exponent)
         else:
-            standard_val = self.to_standard_conversions[self._unit](self._value)
+            try:
+                standard_val = self.to_standard_conversions[self._unit](self._value)
+            except KeyError as _:
+                raise TypeError(f"{self._unit} can not be converted to {unit}")
+                
             val = self.from_standard_conversions[unit](standard_val)
             if inplace:
                 return self.__class__.__init__(self, val, unit, self._exponent)
@@ -201,6 +236,36 @@ class MultiUnit:
                     u1._exponent += u2._exponent
                     u2._exponent = 0
         return unit_list
+    
+    @staticmethod
+    def parse_units(unit_string: str):
+        top_half, bottom_half = unit_string.split("/")
+        top_units = top_half.strip().split("*")
+        bottom_units = bottom_half.strip().split("*")
+        final_top_units = []
+        final_top_exponents = []
+        final_bottom_units = []
+        final_bottom_exponents = []
+        for utop in top_units:
+            if "^" in utop:
+                unit, exponent = utop.split("^")
+            else:
+                exponent = 1
+                unit = utop
+            final_top_units.append(unit)
+            final_top_exponents.append(int(exponent))
+        for ubot in bottom_units:
+            if "^" in ubot:
+                unit, exponent = ubot.split("^")
+            else:
+                exponent = 1
+                unit = ubot
+            final_bottom_units.append(unit)
+            final_bottom_exponents.append(int(exponent))
+        
+        top_half = [BaseUnit(x,y) for x,y in zip(final_top_units, final_top_exponents)]
+        bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
+        return top_half, bottom_half
     
     def deconstruct_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
         new_top_list = []
@@ -280,41 +345,32 @@ class MultiUnit:
         return final_top, final_bottom
         
         
-                
-            
-            
+    def convert_to(self, unit: str, inplace: bool =False):
+        # if converting to the same unit return 
+        if (self.__repr__() == unit):
+            return self
         
-    @staticmethod
-    def parse_units(unit_string: str):
-        top_half, bottom_half = unit_string.split("/")
-        top_units = top_half.strip().split("*")
-        bottom_units = bottom_half.strip().split("*")
-        final_top_units = []
-        final_top_exponents = []
-        final_bottom_units = []
-        final_bottom_exponents = []
-        for utop in top_units:
-            if "^" in utop:
-                unit, exponent = utop.split("^")
-            else:
-                exponent = 1
-                unit = utop
-            final_top_units.append(unit)
-            final_top_exponents.append(int(exponent))
-        for ubot in bottom_units:
-            if "^" in ubot:
-                unit, exponent = ubot.split("^")
-            else:
-                exponent = 1
-                unit = ubot
-            final_bottom_units.append(unit)
-            final_bottom_exponents.append(int(exponent))
+        # TODO make it so it doesn't error flipped units
+        convert_top, convert_bottom = self.parse_units(unit)
+        # get top and bottom half of self 
+        new_top_half = [Unit(1, x._unit, x._exponent) for x in self._top_half]
+        new_bottom_half = [Unit(1,x._unit, x._exponent) for x in self._bottom_half]
         
-        top_half = [BaseUnit(x,y) for x,y in zip(final_top_units, final_top_exponents)]
-        bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
-        return top_half, bottom_half
+        top_convert_units = [x._unit for x in convert_top]
+        bottom_convert_units = [x._unit for x in convert_bottom]
         
-    
+        top_converted = [x.convert_to(y) for x in new_top_half for y in top_convert_units]
+        bottom_converted = [x.convert_to(y) for x in new_bottom_half for y in bottom_convert_units]
+        top_nums = [x._value for x in top_converted]
+        bottom_nums = [x._value for x in bottom_converted]
+        
+        top_factor = reduce((lambda x, y: x * y), top_nums)
+        bottom_factor = reduce((lambda x, y: x * y), bottom_nums)
+        
+        if inplace:
+            return self.__class__.__init__(self,self._value*(top_factor/bottom_factor), unit)
+        else:
+            return self.__class__(self._value*(top_factor/bottom_factor), unit)
         
     def __repr__(self):
         top_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
@@ -415,13 +471,13 @@ class MultiUnit:
             
             # if all units cancel
             if len(final_top_half) == 0 and len(final_bottom_half) == 0:
-                return other._value / self._value
+                return other._value * self._value
             
             #if just left with one unit
             if len(final_top_half) == 1 and len(final_bottom_half) == 0:
-                return Unit(other._value / self._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                return Unit(other._value * self._value, final_top_half[0]._unit, final_top_half[0]._exponent)
                             
-            return MultiUnit(other._value / self._value, top_half=final_top_half, bottom_half=final_bottom_half)
+            return MultiUnit(other._value * self._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif isinstance(other, Union[int, float]):
             return MultiUnit(self._value * other, top_half=self._top_half, bottom_half=self._bottom_half)
         else:
