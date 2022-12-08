@@ -27,7 +27,7 @@ MassUnits = [f"{x}{y}" for x in prefixes for y in MassUnits]
 MassUnits.extend(["g", "lb"])
 MassDict = { k:"Mass" for k in MassUnits }
 
-
+# registers units to type of unit it is 
 UNIT_REGISTRY = {
     **TemperatureDict,
     **LengthDict,
@@ -40,9 +40,8 @@ LengthUnit = Literal["m", "ft"]
 
 DECONSTRUCTABLE_UNITS = {
     "Pa": "kg/m*s^2",
+    "J": "kg*m^2/s^2",
     "W": "J/s",
-    
-    
 }
  
 class Unit:
@@ -344,7 +343,27 @@ class MultiUnit:
             
         return final_top, final_bottom
         
+    @staticmethod 
+    def get_unit_class(unit: str):
+        try:
+            unit_class = UNIT_REGISTRY[unit]
+        except KeyError as _:
+            raise KeyError(f"{unit} is not a valid unit in the registry")
         
+        match unit_class:
+            case "Length":
+                return Length
+            case "Mass":
+                return Mass
+            case "Time":
+                return Time
+            case "Temperature":
+                return Temperature
+            case "Current":
+                return Current
+            case _:
+                raise KeyError(f"UNIT REGISTRY is improperly formatted")
+            
     def convert_to(self, unit: str, inplace: bool =False):
         # if converting to the same unit return 
         if (self.__repr__() == unit):
@@ -353,8 +372,8 @@ class MultiUnit:
         # TODO make it so it doesn't error flipped units
         convert_top, convert_bottom = self.parse_units(unit)
         # get top and bottom half of self 
-        new_top_half = [Unit(1, x._unit, x._exponent) for x in self._top_half]
-        new_bottom_half = [Unit(1,x._unit, x._exponent) for x in self._bottom_half]
+        new_top_half = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in self._top_half]
+        new_bottom_half = [self.get_unit_class(x._unit)(1,x._unit, x._exponent) for x in self._bottom_half]
         
         top_convert_units = [x._unit for x in convert_top]
         bottom_convert_units = [x._unit for x in convert_bottom]
@@ -465,10 +484,14 @@ class MultiUnit:
             new_top_half = deepcopy(self._top_half) + [BaseUnit(other._unit, other._exponent)]
             new_bottom_half = deepcopy(self._bottom_half)
             
+            new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+            
             new_top_half = self.combine_units(new_top_half)
+            new_bottom_half = self.combine_units(new_bottom_half)
                         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
             
+            final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
             # if all units cancel
             if len(final_top_half) == 0 and len(final_bottom_half) == 0:
                 return other._value * self._value
@@ -564,15 +587,24 @@ class Pressure(Unit):
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
     
-class BaseLength(Unit):
+class Length(Unit):
     standard: str = "m"
     # from target unit to standard unit 
     to_standard_conversions = {
-        "ft": lambda x: x*0.3048
+        "ft": lambda x: x*0.3048,
+        "mm": lambda x: x/1000,
+        "cm": lambda x: x/100,
+        "dm": lambda x: x/10,
+        "km": lambda x: x*1000
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
-        "ft": lambda x: x*3.28084
+        "ft": lambda x: x*3.28084,
+        "mm": lambda x: x*1000,
+        "cm": lambda x: x*100,
+        "dm": lambda x: x*10,
+        "km": lambda x: x/1000
+        
     }
     def __init__(self,value:float, unit: Literal["m", "ft"],
                  exponent: int = 1):
@@ -631,8 +663,8 @@ class Current(Unit):
                 exponent: int = 1):
         super().__init__(value, unit, exponent)
 class Velocity(MultiUnit):
-    def __init__(self,value:float, length_unit: Literal["m", "ft"], time_unit: Literal["s", "min", "hr", "day"]):
-        super().__init__(value, top_half=[BaseUnit(length_unit)], bottom_half=[BaseUnit(time_unit)])
+    def __init__(self,value:float, unit: str, *, length_unit: Literal["m", "ft"]="m", time_unit: Literal["s", "min", "hr", "day"]="s"):
+        super().__init__(value, unit)
 
 
 class DynamicViscosity(MultiUnit):

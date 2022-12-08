@@ -1,4 +1,4 @@
-from units import Temperature, MultiUnit, Pressure, BaseUnit, BaseLength, Time, Unit, Velocity
+from units import Temperature, MultiUnit, Pressure, BaseUnit, Length, Time, Unit, Velocity
 import pytest
 
 @pytest.mark.parametrize("operand1,operand2,expected", [(Temperature(350, 'K'),50,Temperature(400, 'K')),
@@ -23,7 +23,8 @@ def test_unit_multiplication(operand1, operand2, expected):
 
 @pytest.mark.parametrize("operand1,operand2,expected", [(Temperature(350, 'K'),2,Temperature(175, 'K')),
                                                         (Temperature(350, 'K'), Temperature(2, 'K'), 175.0),
-                                                        (Temperature(350, 'K', 2), Temperature(2, 'K'), Temperature(175.0,'K'))
+                                                        (Temperature(350, 'K', 2), Temperature(2, 'K'), Temperature(175.0,'K')),
+                                                        (MultiUnit(50, "m^2/s^2"), MultiUnit(10, "m/s"), MultiUnit(5, "m/s"))
                                                         ])
 def test_unit_division(operand1, operand2, expected):
     assert(operand1 / operand2 == expected)
@@ -43,7 +44,7 @@ def test_temperature_comversion2():
     
     
 def test_renolyds():
-    d = BaseLength(1, 'm')
+    d = Length(1, 'm')
     rho = MultiUnit(1.5,"kg/m^3")
     v = MultiUnit(2, "m/s")
     mu = MultiUnit(3, "kg/m*s")

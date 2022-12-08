@@ -1,4 +1,4 @@
-from units import MultiUnit, BaseLength, BaseUnit, LengthUnit, Unit, Velocity, LengthUnits, UNIT_REGISTRY
+from units import MultiUnit, BaseLength, BaseUnit, LengthUnit, Unit, Velocity, Energy
 from typing import Literal, List
 
 class ThermalConductivity(MultiUnit):
@@ -28,7 +28,9 @@ def htc_open_field_laminar_avg(Re: float, Pr: float, L: BaseLength,
 
 
 if __name__ == "__main__":
-    print(UNIT_REGISTRY)
+    J = Unit(50, "J")
+    v = MultiUnit(50, "m/s")
+    print(v/J)
     
     
     
