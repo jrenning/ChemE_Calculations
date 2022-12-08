@@ -1,5 +1,6 @@
 from typing import Literal, TypeVar, Generic, Union, List
 from utility import powerset
+from copy import deepcopy
 
 T = TypeVar('T')
 
@@ -80,9 +81,11 @@ class Unit:
                     return self._value / other._value
                 else:
                     return Unit(self._value / other._value, self._unit, exponent_remainder)
+            else:
+                return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
         # if both units
         elif other.__class__.__bases__[0] == Unit:
-            return MultiUnit( top_half=[self], bottom_half=[other], value=self._value / other._value)
+            return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
         elif isinstance(other, Union[int, float]):
             return Unit(self._value / other, self._unit)
         else:
@@ -98,13 +101,22 @@ class Unit:
         elif isinstance(other, Union[int, float]):
             return Unit(self._value * other, self._unit)
         else:
-            raise TypeError(f"Dividing class {self.__class__} and {other.__class__} is unsupported")
-        
+            raise TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
+    
+    def __rmul__(self, other):
+        if isinstance(other, Union[int, float]):
+            return Unit(self._value * other, self._unit)
+        else:
+            raise TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
+            
     def __pow__(self, other):
         if isinstance(other, Union[int, float]):
             return Unit(self._value**other, self._unit, self._exponent*other)
         else:
             raise TypeError(f"Exponentiations with class {self.__class__} and {other.__class__} is unsupported")
+    
+    def __neg__(self):
+        return Unit(-self._value, self._unit, self._exponent)
     def convert_to(self,unit, inplace=False):
         if (self._unit == unit):
             return self
@@ -339,8 +351,8 @@ class MultiUnit:
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return self._value / other._value
             else:
-                new_top_half = self._top_half + other._bottom_half
-                new_bottom_half = self._bottom_half + other._top_half
+                new_top_half = deepcopy(self._top_half) + deepcopy(other._bottom_half)
+                new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._top_half)
                 
                 final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
                 
@@ -355,8 +367,8 @@ class MultiUnit:
                 
                 return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
-            new_top_half = self._top_half 
-            new_bottom_half = self._bottom_half + [BaseUnit(other._unit, other._exponent)]
+            new_top_half = deepcopy(self._top_half)
+            new_bottom_half = deepcopy(self._bottom_half) + [BaseUnit(other._unit, other._exponent)]
             
             new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
             
@@ -384,8 +396,9 @@ class MultiUnit:
     def __mul__(self,other):
 
         if self.__class__ == other.__class__:
-            new_top_half = self._top_half + other._top_half
-            new_bottom_half = self._bottom_half + other._bottom_half
+            
+            new_top_half = deepcopy(self._top_half) + deepcopy(other._top_half)
+            new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._bottom_half)
             
             new_top_half = self.combine_units(new_top_half)
             new_bottom_half = self.combine_units(new_bottom_half)
@@ -393,18 +406,22 @@ class MultiUnit:
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
             return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
-            new_top_half = self._top_half + [BaseUnit(other._unit, other._exponent)]
-            new_bottom_half = self._bottom_half
+            new_top_half = deepcopy(self._top_half) + [BaseUnit(other._unit, other._exponent)]
+            new_bottom_half = deepcopy(self._bottom_half)
             
             new_top_half = self.combine_units(new_top_half)
                         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
             
+            # if all units cancel
+            if len(final_top_half) == 0 and len(final_bottom_half) == 0:
+                return other._value / self._value
+            
             #if just left with one unit
             if len(final_top_half) == 1 and len(final_bottom_half) == 0:
-                return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                return Unit(other._value / self._value, final_top_half[0]._unit, final_top_half[0]._exponent)
                             
-            return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
+            return MultiUnit(other._value / self._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif isinstance(other, Union[int, float]):
             return MultiUnit(self._value * other, top_half=self._top_half, bottom_half=self._bottom_half)
         else:
@@ -413,6 +430,33 @@ class MultiUnit:
     def __rtruediv__(self,other):
         if isinstance(other, Union[int, float]):
             return MultiUnit(other/self._value,top_half=self._bottom_half, bottom_half=self._top_half)
+        elif other.__class__ == Unit or other.__class__.__bases__[0] == Unit:
+            
+            
+            new_top_half = self._top_half.deepcopy()
+            new_bottom_half = self._bottom_half.deepcopy()
+            # append unit to the bottom half 
+            new_bottom_half.append(BaseUnit(other._unit, other._exponent))
+            # swap halfs 
+            new_top_half, new_bottom_half = new_bottom_half, new_top_half
+            
+
+            
+            new_top_half = self.combine_units(new_top_half)
+                        
+            final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+            
+            # if all units cancel
+            if len(final_top_half) == 0 and len(final_bottom_half) == 0:
+                return other._value / self._value
+            
+            #if just left with one unit
+            if len(final_top_half) == 1 and len(final_bottom_half) == 0:
+                return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                            
+            return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
+            
+        
         else:
             raise TypeError(f"Dividing class {other.__class__} and {self.__class__} is unsupported")
     def __rmul__(self, other):
@@ -420,8 +464,14 @@ class MultiUnit:
             return MultiUnit(other * self._value,top_half=self._top_half, bottom_half=self._bottom_half)
         else:
             raise TypeError(f"Multiplying class {other.__class__} and {self.__class__} is unsupported")
-            
-            
+    def __pow__(self, other):
+        if isinstance(other, Union[int, float]):
+            for u1 in self._top_half:
+                u1._exponent *= other
+            for u2 in self._bottom_half:
+                u2._exponent *= other
+            return MultiUnit(self._value**other,top_half=self._top_half, bottom_half=self._bottom_half)
+        raise TypeError(f"Exponentiating class {other.__class__} and {self.__class__} is unsupported")
 class Temperature(Unit):
     standard: str = "K"
     to_standard_conversions = {
@@ -556,13 +606,13 @@ def getR_constant(temperature_units: Literal["K", "C", "F", "R"],
                   pressure_units: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"],
                   generic=False):
     if generic:
-        return 8.314
+        return MultiUnit(8.314, "J/mol*K")
     if volume_units == "m^3" and pressure_units == "Pa" and temperature_units == "K":
-        return 8.314
+        return MultiUnit(8.314, "m^3*Pa/mol*K")
     if volume_units == "L" and pressure_units == "atm" and temperature_units == "K":
-        return 0.08205
+        return MultiUnit(0.08205, "L*atm/mol*K")
     if volume_units == "m^3" and pressure_units == "atm" and temperature_units == "K":
-        return 8.205746E-5
+        return MultiUnit(8.205746E-5, "m^3*atm/mol*K")
     
     raise ValueError("The units supplied to R are not defined in a known constant")
     

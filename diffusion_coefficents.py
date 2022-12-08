@@ -1,5 +1,10 @@
 from units import Temperature, MultiUnit
 
+class DiffusionCoefficient(MultiUnit):
+    def __init__(value: float, ):
+        pass
+        
+
 def wilke_chnag(temperature: Temperature, theta_b: float, moleclar_weight_b: MultiUnit,
                 viscosity_b: MultiUnit, molecular_volume_a: MultiUnit):
     
