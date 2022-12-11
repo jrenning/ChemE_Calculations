@@ -1,4 +1,4 @@
-from units import Temperature, MultiUnit, LengthUnit
+from units import Temperature, MultiUnit, LengthUnit, DynamicViscosity
 
 class DiffusionCoefficient(MultiUnit):
     def __init__(value: float, length_unit: LengthUnit, time_unit):
@@ -14,12 +14,8 @@ def wilke_chnag(temperature: Temperature, theta_b: float, moleclar_weight_b: Mul
 
 
 if __name__ == "__main__":
-    T = 293.15
-    theta_b = 2.6
-    molecular_weight = 18
-    viscosity_b = 1
-    molecular_vol = 29.9
-    ans = wilke_chnag(T,theta_b,molecular_weight, viscosity_b,
-                      molecular_vol)
+
+    v = DynamicViscosity(50, "cP")
+    v.convert_to("kg/s*m", True)
+    print(v)
     
-    print(ans)

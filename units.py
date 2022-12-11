@@ -2,8 +2,12 @@ from typing import Literal, TypeVar, Generic, Union, List
 from utility import powerset
 from copy import deepcopy
 from functools import reduce
+from collections import defaultdict
 
 T = TypeVar('T')
+
+class UnitConversionError(Exception):
+    pass
 
 # milli. centi, deci, kilo, mega
 prefixes = ["m", "c", "d", "k", "M"]
@@ -364,27 +368,50 @@ class MultiUnit:
             case _:
                 raise KeyError(f"UNIT REGISTRY is improperly formatted")
             
-    def convert_to(self, unit: str, inplace: bool =False):
-        # if converting to the same unit return 
-        if (self.__repr__() == unit):
-            return self
-        
-        # TODO make it so it doesn't error flipped units
+    def convert_to(self, unit: str, inplace: bool =False):       
         convert_top, convert_bottom = self.parse_units(unit)
+        convert_top = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in convert_top]
+        convert_bottom = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in convert_bottom]
+        
         # get top and bottom half of self 
         new_top_half = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in self._top_half]
         new_bottom_half = [self.get_unit_class(x._unit)(1,x._unit, x._exponent) for x in self._bottom_half]
         
-        top_convert_units = [x._unit for x in convert_top]
-        bottom_convert_units = [x._unit for x in convert_bottom]
         
-        top_converted = [x.convert_to(y) for x in new_top_half for y in top_convert_units]
-        bottom_converted = [x.convert_to(y) for x in new_bottom_half for y in bottom_convert_units]
-        top_nums = [x._value for x in top_converted]
-        bottom_nums = [x._value for x in bottom_converted]
+        # if converting to the same unit return
+        if convert_top == new_top_half and convert_bottom == new_bottom_half:
+            return self 
         
-        top_factor = reduce((lambda x, y: x * y), top_nums)
-        bottom_factor = reduce((lambda x, y: x * y), bottom_nums)
+        # check that bases are the same ie each has one length over one mass 
+        new_unit_dict = defaultdict(lambda: 0)
+        self_unit_dict = defaultdict(lambda: 0)
+        
+        for u1 in convert_top:
+            new_unit_dict[str(self.get_unit_class(u1._unit))] += 1
+        for u2 in convert_bottom:
+            new_unit_dict[str(self.get_unit_class(u2._unit))] += 1
+        for u1 in new_top_half:
+            self_unit_dict[str(self.get_unit_class(u1._unit))] += 1
+        for u2 in new_bottom_half:
+            self_unit_dict[str(self.get_unit_class(u2._unit))] += 1
+            
+        if new_unit_dict != self_unit_dict:
+            raise UnitConversionError(f"The conversion to {unit} is not allowed")
+        
+        top_factor = 1
+        bottom_factor = 1
+        for u1 in new_top_half:
+            for u2 in convert_top:
+                if u1.__class__ == u2.__class__:
+                    u3 = u1.convert_to(u2._unit)
+                    top_factor *= u3._value
+        
+        for u1 in new_bottom_half:
+            for u2 in convert_bottom:
+                if u1.__class__ == u2.__class__:
+                    u3 = u1.convert_to(u2._unit)
+                    bottom_factor *= u3._value
+            
         
         if inplace:
             return self.__class__.__init__(self,self._value*(top_factor/bottom_factor), unit)
