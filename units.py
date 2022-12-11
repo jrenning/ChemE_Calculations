@@ -121,7 +121,7 @@ class Unit:
         elif other.__class__.__bases__[0] == Unit:
             return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
         elif isinstance(other, Union[int, float]):
-            return self.__class__(self._value / other, self._unit)
+            return self.__class__(self._value / other, self._unit, self._exponent)
         else:
             raise TypeError(f"Dividing class {self.__class__} and {other.__class__} is unsupported")
     def __mul__(self, other):
@@ -447,8 +447,8 @@ class MultiUnit:
             raise TypeError(f"Subtracting class {self.__class__} and {other.__class__} is unsupported")
     def __truediv__(self,other):
         
-        # same class 
-        if self.__class__ == other.__class__:
+        # same class or inherit from same class 
+        if self.__class__ == other.__class__ or  other.__class__.__bases__[0] == MultiUnit:
             # same units 
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return self._value / other._value
@@ -456,9 +456,12 @@ class MultiUnit:
                 new_top_half = deepcopy(self._top_half) + deepcopy(other._bottom_half)
                 new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._top_half)
                 
+                new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+                
                 final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
                 
                 final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
+                
                 # if all units cancel
                 if len(final_top_half) == 0 and len(final_bottom_half) == 0:
                     return self._value / other._value
@@ -581,7 +584,7 @@ class MultiUnit:
 class Temperature(Unit):
     standard: str = "K"
     to_standard_conversions = {
-        "F": lambda x: (5/9)*x + 459.67,
+        "F": lambda x: (5/9)*(x + 459.67),
         "C": lambda x: x + 273.15,
         "R": lambda x: x / (1.8)
     }

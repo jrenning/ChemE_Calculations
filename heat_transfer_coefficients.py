@@ -1,4 +1,4 @@
-from units import MultiUnit, BaseLength, BaseUnit, LengthUnit, Unit, Velocity, Energy
+from units import MultiUnit, Length, BaseUnit, LengthUnit, Unit, Velocity, Energy
 from typing import Literal, List
 
 class ThermalConductivity(MultiUnit):
@@ -12,14 +12,14 @@ class HeatTransferCoefficient(MultiUnit):
         super().__init__(value, top_half, bottom_half)
         
 
-def htc_open_field_laminar_local(Re: float, Pr: float, L: BaseLength,
+def htc_open_field_laminar_local(Re: float, Pr: float, L: Length,
                              k: ThermalConductivity):
     Nu_local: float = 0.332*Re**(1/2)*Pr**(1/3)
     h: MultiUnit = (Nu_local * k) / L
     return HeatTransferCoefficient(h._value, h._top_half, h._bottom_half)
     
 
-def htc_open_field_laminar_avg(Re: float, Pr: float, L: BaseLength,
+def htc_open_field_laminar_avg(Re: float, Pr: float, L: Length,
                              k: ThermalConductivity):
     
     Nu_local: float = 0.664*Re**(1/2)*Pr**(1/3)
