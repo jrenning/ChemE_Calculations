@@ -1,5 +1,5 @@
 from property_units import Density
-from units import MultiUnit, Temperature, Length
+from units import MultiUnit, Temperature, Length, Time
 from heat_transfer_coefficients import ThermalConductivity
 
 def pseudo_steady_time(density: MultiUnit, heat_of_vaporization: MultiUnit, k: ThermalConductivity,
@@ -7,9 +7,11 @@ def pseudo_steady_time(density: MultiUnit, heat_of_vaporization: MultiUnit, k: T
                        final_length: Length):
     term1 = (density*heat_of_vaporization)/(k*(T_surface-T_melt))
     term2 = (final_length**2-initial_length**2)/2
-    time = term1*term2
-    return time
 
+
+def semi_infinite_slab(Ts: Temperature, To: Temperature, z: Length,
+                       time: Time, thermal_diffusivity: MultiUnit):
+    pass
 
 if __name__ == "__main__":
     ans = pseudo_steady_time(MultiUnit(800, "kg/m^3"),MultiUnit(8000,"J/kg"),

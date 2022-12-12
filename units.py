@@ -1,7 +1,6 @@
 from typing import Literal, TypeVar, Generic, Union, List
 from utility import powerset
 from copy import deepcopy
-from functools import reduce
 from collections import defaultdict
 
 T = TypeVar('T')
@@ -131,11 +130,13 @@ class Unit:
                     return self.__class__(self._value * other._value, self._unit, self._exponent + other._exponent)
         # if both units
         if other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
-                return MultiUnit(top_half=[self, other], bottom_half=None, value=self._value * other._value)
+                return MultiUnit(top_half=[BaseUnit(self._unit), BaseUnit(other._unit)], bottom_half=None, value=self._value * other._value)
+        elif other.__class__ == MultiUnit or other.__class__.__bases__[0] == MultiUnit:
+            return MultiUnit.__mul__(other, self)
         elif isinstance(other, Union[int, float]):
             return self.__class__(self._value * other, self._unit)
         else:
-            raise TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
+            raise NotImplementedError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
     
     def __rmul__(self, other):
         if isinstance(other, Union[int, float]):
@@ -500,7 +501,7 @@ class MultiUnit:
         
     def __mul__(self,other):
 
-        if self.__class__ == other.__class__:
+        if self.__class__ == other.__class__ or other.__class__.__bases__[0] == MultiUnit or other.__class__ == MultiUnit:
             
             new_top_half = deepcopy(self._top_half) + deepcopy(other._top_half)
             new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._bottom_half)
@@ -571,6 +572,27 @@ class MultiUnit:
     def __rmul__(self, other):
         if isinstance(other, Union[int, float]):
             return MultiUnit(other * self._value,top_half=self._top_half, bottom_half=self._bottom_half)
+        elif other.__class__ == Unit or other.__class__.__bases__[0] == Unit:
+            new_top_half = deepcopy(self._top_half) + [BaseUnit(other._unit, other._exponent)]
+            new_bottom_half = deepcopy(self._bottom_half)
+            
+            new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+            
+            new_top_half = self.combine_units(new_top_half)
+            new_bottom_half = self.combine_units(new_bottom_half)
+                        
+            final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+            
+            final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
+            # if all units cancel
+            if len(final_top_half) == 0 and len(final_bottom_half) == 0:
+                return other._value * self._value
+            
+            #if just left with one unit
+            if len(final_top_half) == 1 and len(final_bottom_half) == 0:
+                return Unit(other._value * self._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                            
+            return MultiUnit(other._value * self._value, top_half=final_top_half, bottom_half=final_bottom_half)
         else:
             raise TypeError(f"Multiplying class {other.__class__} and {self.__class__} is unsupported")
     def __pow__(self, other):
@@ -581,6 +603,9 @@ class MultiUnit:
                 u2._exponent *= other
             return MultiUnit(self._value**other,top_half=self._top_half, bottom_half=self._bottom_half)
         raise TypeError(f"Exponentiating class {other.__class__} and {self.__class__} is unsupported")
+    
+    def __neg__(self):
+        return self.__class__(-self._value,top_half=self._top_half, bottom_half=self._bottom_half)
 class Temperature(Unit):
     standard: str = "K"
     to_standard_conversions = {
@@ -719,20 +744,7 @@ class DynamicViscosity(MultiUnit):
 
 
         
-def getR_constant(temperature_units: Literal["K", "C", "F", "R"],
-                  volume_units: Literal["cm^3", "m^3", "L"],
-                  pressure_units: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"],
-                  generic=False):
-    if generic:
-        return MultiUnit(8.314, "J/mol*K")
-    if volume_units == "m^3" and pressure_units == "Pa" and temperature_units == "K":
-        return MultiUnit(8.314, "m^3*Pa/mol*K")
-    if volume_units == "L" and pressure_units == "atm" and temperature_units == "K":
-        return MultiUnit(0.08205, "L*atm/mol*K")
-    if volume_units == "m^3" and pressure_units == "atm" and temperature_units == "K":
-        return MultiUnit(8.205746E-5, "m^3*atm/mol*K")
-    
-    raise ValueError("The units supplied to R are not defined in a known constant")
+
     
         
         
