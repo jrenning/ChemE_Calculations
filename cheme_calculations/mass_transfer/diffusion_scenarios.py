@@ -1,6 +1,8 @@
-from units import Mass, BaseLength, MultiUnit, Time
+from cheme_calculations.units import Mass, BaseLength, MultiUnit, Time
 from typing import Literal
 from math import exp, pi
+
+__all__ = ["three_d_pulse_decay"]
 
 def three_d_pulse_decay(initial_mass: Mass, distance: BaseLength, diffusion_coefficient: MultiUnit,
                         time: Time, shape: Literal["cube", "hemisphere"]):

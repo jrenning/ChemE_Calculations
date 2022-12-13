@@ -1,17 +1,10 @@
-from units import Temperature, Pressure, getR_constant, Unit, MultiUnit, BaseUnit, BaseLength
 
+from cheme_calculations.units import Temperature, Pressure
 
-class UnitSystem:
-    pass
-# testing something
-class Volume:
-    def __init__(self,volume):
-        self.volume = volume
-    def __repr__(self) -> str:
-        return f"{self.volume} cm^3"
 
     
-        
+__all__ = ["rendlich_kwong", "van_der_waals", "soave_rendlich_kwong", 
+           "peng_robinson"]  
 
 
 def rendlich_kwong(temperature: Temperature, pressure: Pressure,
@@ -171,9 +164,10 @@ def peng_robinson(temperature: Temperature, pressure: Pressure,
 
     
 if __name__ == "__main__":
-    T = Temperature(50, 'K')
-    T2 = Temperature(10, 'K')
-    T3 = T * T2
+    # T = Temperature(50, 'K')
+    # T2 = Temperature(10, 'K')
+    # T3 = T * T2
+    pass
 
     
     

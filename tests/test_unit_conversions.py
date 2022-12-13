@@ -1,4 +1,4 @@
-from units import Velocity, DynamicViscosity, Temperature
+from cheme_calculations.units import Velocity, DynamicViscosity, Temperature
 import pytest
 from pytest import approx
 

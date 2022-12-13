@@ -1,11 +1,9 @@
-from units import Temperature, MultiUnit, LengthUnit, DynamicViscosity
+from cheme_calculations.units import Temperature, MultiUnit, LengthUnit, DynamicViscosity
 
-class DiffusionCoefficient(MultiUnit):
-    def __init__(value: float, length_unit: LengthUnit, time_unit):
-        pass
+__all__ = ["wilke_chang"]
         
 
-def wilke_chnag(temperature: Temperature, theta_b: float, moleclar_weight_b: MultiUnit,
+def wilke_chang(temperature: Temperature, theta_b: float, moleclar_weight_b: MultiUnit,
                 viscosity_b: MultiUnit, molecular_volume_a: MultiUnit):
     
     answer = (7.4E-8*(theta_b*moleclar_weight_b)**(1/2)*temperature)/(viscosity_b*molecular_volume_a**0.6)

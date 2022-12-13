@@ -1,4 +1,4 @@
-from units import BaseUnit, MultiUnit, Unit
+from .units import BaseUnit, MultiUnit, Unit
 from typing import List, Literal
 
 class Area(Unit):
