@@ -1,5 +1,5 @@
 import pytest
-from cheme_calculations.units import Pressure, MultiUnit, BaseUnit, Energy, Time, Unit
+from cheme_calculations.units import Pressure, MultiUnit, Time, Unit
 
 def test_deconstruct_cancel():
     P = Pressure(50, "Pa")

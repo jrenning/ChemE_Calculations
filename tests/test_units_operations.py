@@ -1,4 +1,4 @@
-from cheme_calculations.units import Temperature, MultiUnit, Pressure, BaseUnit, Length, Time, Unit, Velocity
+from cheme_calculations.units import Temperature, MultiUnit, Length, Unit
 import pytest
 
 @pytest.mark.parametrize("operand1,operand2,expected", [(Temperature(350, 'K'),50,Temperature(400, 'K')),

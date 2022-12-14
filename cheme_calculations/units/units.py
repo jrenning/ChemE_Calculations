@@ -5,8 +5,7 @@ from collections import defaultdict
 
 
 __all__ = ["Unit", "MultiUnit", "BaseUnit", "Temperature", "Pressure", 
-           "Mass", "Current", "Energy", "Time", "Length", "Velocity",
-           "DynamicViscosity"]
+           "Mass", "Current", "Energy", "Time", "Length"]
 
 T = TypeVar('T')
 
@@ -111,8 +110,8 @@ class Unit:
         else:
             raise TypeError(f"Subtracting class {self.__class__} and {other.__class__} is unsupported")
     def __truediv__(self, other):
-        # same class 
-        if other.__class__ == self.__class__:
+        # same class or other is just a unit
+        if other.__class__ == self.__class__ or other.__class__ == Unit or other.__class__.__bases__[0] == Unit:
             if (self._unit == other._unit):
                 exponent_remainder = self._exponent - other._exponent
                 if exponent_remainder == 0:
@@ -121,9 +120,6 @@ class Unit:
                     return self.__class__(self._value / other._value, self._unit, exponent_remainder)
             else:
                 return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
-        # if both units
-        elif other.__class__.__bases__[0] == Unit:
-            return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
         elif isinstance(other, Union[int, float]):
             return self.__class__(self._value / other, self._unit, self._exponent)
         else:
@@ -135,7 +131,7 @@ class Unit:
                     return self.__class__(self._value * other._value, self._unit, self._exponent + other._exponent)
         # if both units
         if other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
-                return MultiUnit(top_half=[BaseUnit(self._unit), BaseUnit(other._unit)], bottom_half=None, value=self._value * other._value)
+                return MultiUnit(top_half=[BaseUnit(self._unit), BaseUnit(other._unit)], bottom_half=[], value=self._value * other._value)
         elif other.__class__ == MultiUnit or other.__class__.__bases__[0] == MultiUnit:
             return MultiUnit.__mul__(other, self)
         elif isinstance(other, Union[int, float]):
@@ -202,6 +198,14 @@ class BaseUnit:
     def __hash__(self):
         return hash(str(self))
     
+    def __pow__(self, other):
+        if isinstance(other, Union[int, float]):
+                     
+            return BaseUnit(self._unit, self._exponent*other)
+        else:
+            raise NotImplementedError(f"Taking a base unit to a power with {other} is not allowed")
+        
+    
     
 class MultiUnit:
     def __init__(self, value: float, unit: str="", *,  top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):
@@ -217,7 +221,7 @@ class MultiUnit:
     def cancel_units(top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
         for u1 in top_half:
             for u2 in bottom_half:
-                if u1._unit == u2._unit:
+                if u1._unit == u2._unit and u1._exponent != 0:
                     u1._exponent -= u2._exponent
                     u2._exponent = 0
                     
@@ -284,6 +288,9 @@ class MultiUnit:
             if unit._unit in DECONSTRUCTABLE_UNITS.keys():
                 new_string = DECONSTRUCTABLE_UNITS[unit._unit]
                 top_half, bottom_half = self.parse_units(new_string)
+                # update exponents as well
+                top_half = [x**unit._exponent for x in top_half]
+                bottom_half = [x**unit._exponent for x in bottom_half]
                 new_top_list.extend(top_half)
                 new_bottom_list.extend(bottom_half)
             else:
@@ -293,9 +300,12 @@ class MultiUnit:
             if unit._unit in DECONSTRUCTABLE_UNITS.keys():
                 new_string = DECONSTRUCTABLE_UNITS[unit._unit]
 
-                extra_top_list, extra_bottom_list = self.parse_units(new_string)
-                new_bottom_list.extend(extra_top_list)
-                new_top_list.extend(extra_bottom_list)
+                top_half, bottom_half = self.parse_units(new_string)
+                # update exponents as well
+                top_half = [x**unit._exponent for x in top_half]
+                bottom_half = [x**unit._exponent for x in bottom_half]
+                new_bottom_list.extend(top_half)
+                new_top_list.extend(bottom_half)
             else:
                 new_bottom_list.append(unit)
 
@@ -454,7 +464,7 @@ class MultiUnit:
     def __truediv__(self,other):
         
         # same class or inherit from same class 
-        if self.__class__ == other.__class__ or  other.__class__.__bases__[0] == MultiUnit:
+        if self.__class__ == other.__class__ or  other.__class__.__bases__[0] == MultiUnit or other.__class__ == MultiUnit:
             # same units 
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return self._value / other._value
@@ -463,6 +473,9 @@ class MultiUnit:
                 new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._top_half)
                 
                 new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+                
+                new_bottom_half = self.combine_units(new_bottom_half)
+                new_top_half = self.combine_units(new_top_half)
                 
                 final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
                 
@@ -511,10 +524,15 @@ class MultiUnit:
             new_top_half = deepcopy(self._top_half) + deepcopy(other._top_half)
             new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._bottom_half)
             
+            new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+            
             new_top_half = self.combine_units(new_top_half)
             new_bottom_half = self.combine_units(new_bottom_half)
-            
+        
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+            
+            final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
+            
             return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
             new_top_half = deepcopy(self._top_half) + [BaseUnit(other._unit, other._exponent)]
@@ -602,11 +620,13 @@ class MultiUnit:
             raise TypeError(f"Multiplying class {other.__class__} and {self.__class__} is unsupported")
     def __pow__(self, other):
         if isinstance(other, Union[int, float]):
-            for u1 in self._top_half:
+            new_top_half = deepcopy(self._top_half)
+            new_bottom_half = deepcopy(self._bottom_half)
+            for u1 in new_top_half:
                 u1._exponent *= other
-            for u2 in self._bottom_half:
+            for u2 in new_bottom_half:
                 u2._exponent *= other
-            return MultiUnit(self._value**other,top_half=self._top_half, bottom_half=self._bottom_half)
+            return MultiUnit(self._value**other,top_half=new_top_half, bottom_half=new_bottom_half)
         raise TypeError(f"Exponentiating class {other.__class__} and {self.__class__} is unsupported")
     
     def __neg__(self):
@@ -722,29 +742,7 @@ class Current(Unit):
     def __init__(self,value:float, unit: Literal["A"],
                 exponent: int = 1):
         super().__init__(value, unit, exponent)
-class Velocity(MultiUnit):
-    def __init__(self,value:float, unit: str, *, length_unit: Literal["m", "ft"]="m", time_unit: Literal["s", "min", "hr", "day"]="s"):
-        super().__init__(value, unit)
 
-
-class DynamicViscosity(MultiUnit):
-    standard: str = "cP"
-    # from target unit to standard unit 
-    to_standard_conversions = {
-        "kg/m*s": lambda x: x,
-        "kg/cm*s": lambda x: x*100
-    }
-    # form standard unit to the target unit 
-    from_standard_conversions = {
-        "kg/m*s": lambda x: x,
-        "kg/cm*s": lambda x: x/100
-    }
-    def __init__(self, value, unit=Literal["cP", "kg/m*s", "cm/m*s"]):
-        if unit == "cP":
-            unit_string = "kg/m*s"
-            super().__init__(value/1000,unit_string)
-        else:
-            super().__init__(value, unit)
     
 
 
