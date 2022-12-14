@@ -12,6 +12,7 @@ def powerset(iterable):
     s = list(iterable)
     return list(chain.from_iterable(combinations(s, r) for r in range(1, len(s)+1)))
 
+
 def getR_constant(temperature_units: Literal["K", "C", "F", "R"],
                   volume_units: Literal["cm^3", "m^3", "L"],
                   pressure_units: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"],

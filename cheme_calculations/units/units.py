@@ -1,7 +1,9 @@
+from math import floor
 from typing import Literal, TypeVar, Generic, Union, List
-from cheme_calculations.utility import powerset
 from copy import deepcopy
 from collections import defaultdict
+
+
 
 
 __all__ = ["Unit", "MultiUnit", "BaseUnit", "Temperature", "Pressure", 
@@ -49,6 +51,7 @@ DECONSTRUCTABLE_UNITS = {
     "Pa": "kg/m*s^2",
     "J": "kg*m^2/s^2",
     "W": "J/s",
+    "W": "kg*m^2/s^3"
 }
  
 class Unit:
@@ -312,56 +315,117 @@ class MultiUnit:
         
         return new_top_list, new_bottom_list
     
-    def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
-        top_unit_list = [x.__repr__() for x in top_list]
-        bottom_unit_list = [x.__repr__() for x in bottom_list]
-        # get possible combos
-        possible_tops = powerset(top_unit_list)
-        possible_bottoms = powerset(bottom_unit_list)
+    def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit], fractional: bool=False):
         
+        matches_dict = defaultdict(lambda: 0)
         
-        tops = ["*".join(x) for x in possible_tops]
-        bottoms = ["*".join(x) for x in possible_bottoms]
-        
-        # add flipped versions of everything
-        topy_copy = tops.copy()
-        for top in topy_copy:
-            if "*" in top:
-                split = top.split("*")
-                if len(split) == 2:
-                    bottoms.append(f"{split[1]}*{split[0]}")
-        bot_copy = bottoms.copy()   
-        for bot in bot_copy:
-            if "*" in bot:
-                split = bot.split("*")
-                # no composite unit has a length of units greater than 2
-                if len(split) == 2:
-                    bottoms.append(f"{split[1]}*{split[0]}")
-                
-                
-        combos = [f"{x}/{y}" for x in tops for y in bottoms]
-        final_top = []
-        final_bottom = []
-        for combo in combos:
-            if combo in DECONSTRUCTABLE_UNITS.values():
-                # get key of the value
-                value = [i for i in DECONSTRUCTABLE_UNITS if DECONSTRUCTABLE_UNITS[i]==combo]
-                top_base_units, bottom_base_units = self.parse_units(combo)
-                for u1 in top_list:
-                    if u1 not in top_base_units:
-                        final_top.append(u1)
-                for u2 in bottom_list:
-                    if u2 not in bottom_base_units:
-                        final_bottom.append(u2)
-                # append new simplified unit
-                final_top.append(BaseUnit(value[0]))
-                break
-        # if no matches
-        else:
-            final_top = top_list
-            final_bottom = bottom_list
+        for destructable_unit in DECONSTRUCTABLE_UNITS.values():
             
-        return final_top, final_bottom
+            
+            
+            top_base_units, bottom_base_units = self.parse_units(destructable_unit)
+            # make a copy to standardize
+            standard_base_top = deepcopy(top_base_units)
+            standard_base_bottom = deepcopy(bottom_base_units)
+            # standardize the unit (remove exponents)
+            for u1 in standard_base_top:
+                u1._exponent = 1
+            for u2 in standard_base_bottom:
+                u2._exponent = 1
+            # standardize the top list passed in 
+            standard_unit_top = deepcopy(top_list)
+            standard_unit_bottom = deepcopy(bottom_list)
+            for u1 in standard_unit_top:
+                u1._exponent = 1
+            for u2 in standard_unit_bottom:
+                u2._exponent = 1
+            
+            # check if units in conversion unit are a subset of the unit list
+            # if not moves on to next unit to check
+            if not set(standard_base_top).issubset(set(standard_unit_top)) or not set(standard_base_bottom).issubset(set(standard_unit_bottom)):
+                continue
+            
+            # # check exponents (now that we know a match may exist)
+            exp_match = False
+            for u1 in top_base_units:
+                for u2 in top_list:
+                    if u1._unit == u2._unit:
+                        # units should be combined at this point so 
+                        # each unit should exist only once in a top list / bottom list
+                        if u2._exponent < u1._exponent:
+                            break
+            # if no break              
+            else:
+                exp_match = True
+                
+                        # if no match try next unit
+            if not exp_match:
+                continue
+            
+            exp_match = False
+            for u1 in bottom_base_units:
+                for u2 in bottom_list:
+                    if u1._unit == u2._unit:
+                        # units should be combined at this point so 
+                        # each unit should exist only once in a top list / bottom list
+                        if u2._exponent < u1._exponent:
+                            break
+            # if no break              
+            else:
+                exp_match = True
+            
+            # if no match try next unit
+            if not exp_match:
+                continue
+            
+            # know there is a match
+            # find number of matches
+            num_matches = 100
+            for u1 in top_base_units:
+                for u2 in top_list:
+                    if u1._unit == u2._unit:
+                        matches = floor(u2._exponent / u1._exponent)
+                        if matches < num_matches:
+                            num_matches = matches
+            for u1 in bottom_base_units:
+                for u2 in bottom_list:
+                    if u1._unit == u2._unit:
+                        matches = floor(u2._exponent / u1._exponent)
+                        if matches < num_matches:
+                            num_matches = matches
+                                      # get key of the value
+            value = [i for i in DECONSTRUCTABLE_UNITS if DECONSTRUCTABLE_UNITS[i]==destructable_unit]
+            # add to matches dictionary
+            matches_dict[value[0]] = num_matches   
+        
+        # no matches return original data 
+        if matches_dict == {}:
+            return top_list, bottom_list
+    
+        # get max matches
+        best_match_unit = max(matches_dict, key=matches_dict.get)
+        best_match_to_replace = DECONSTRUCTABLE_UNITS[best_match_unit]
+        best_match_val = matches_dict[best_match_unit]
+        
+        # get the best matches Base Unit lists
+        top_base_units, bottom_base_units = self.parse_units(best_match_to_replace)
+        
+        # update exponent 
+        for unit in top_base_units:
+            unit._exponent *= best_match_val
+        for unit in bottom_base_units:
+            unit._exponent *= best_match_val  
+        
+        # add tp lists, then cancel units
+        bottom_list.extend(top_base_units)
+        top_list.extend(bottom_base_units)
+        
+        final_top_list, final_bottom_list = self.cancel_units(top_list, bottom_list)
+        
+        # add back simplified unit 
+        final_top_list.append(BaseUnit(best_match_unit, best_match_val))
+        
+        return final_top_list, final_bottom_list
         
     @staticmethod 
     def get_unit_class(unit: str):
@@ -626,6 +690,7 @@ class MultiUnit:
                 u1._exponent *= other
             for u2 in new_bottom_half:
                 u2._exponent *= other
+            
             return MultiUnit(self._value**other,top_half=new_top_half, bottom_half=new_bottom_half)
         raise TypeError(f"Exponentiating class {other.__class__} and {self.__class__} is unsupported")
     
