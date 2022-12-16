@@ -1,6 +1,7 @@
 from cheme_calculations.units import Temperature, Length
 from cheme_calculations.units.property_units import Density, DynamicViscosity, Gravity, Hvap
 from cheme_calculations.units.simplifications import do_weird_simplifications, unit_simplifications
+from cheme_calculations.units.units import MultiUnit
 from .unit_types import HeatTransferCoefficient, ThermalConductivity
 
 
@@ -19,3 +20,10 @@ def condensation_transfer_coefficient(k: ThermalConductivity,
     
     
     return h
+
+def flux_max_boiling(hvap: Hvap, rho_v: Density, rho_l: Density, 
+                     surface_tension: MultiUnit, g: Gravity):
+    
+    qa_max = 0.15*hvap*rho_v**(1/2)*(surface_tension*g*(rho_l-rho_v))**(1/4)
+    
+    return qa_max

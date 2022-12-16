@@ -51,7 +51,8 @@ DECONSTRUCTABLE_UNITS = {
     "Pa": "kg/m*s^2",
     "J": "kg*m^2/s^2",
     "W": "J/s",
-    "W": "kg*m^2/s^3"
+    "W": "kg*m^2/s^3",
+    "psi": "lbf/in^2",
 }
  
 class Unit:
