@@ -2,6 +2,8 @@ from math import floor
 from typing import Literal, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
+from cheme_calculations.utility import to_sup
+from cheme_calculations.utility.utility import remove_zero
 
 
 
@@ -51,7 +53,6 @@ DECONSTRUCTABLE_UNITS = {
     "Pa": "kg/m*s^2",
     "J": "kg*m^2/s^2",
     "W": "J/s",
-    "W": "kg*m^2/s^3",
     "psi": "lbf/in^2",
 }
  
@@ -88,7 +89,7 @@ class Unit:
         if self._exponent == 1:
             return f"{self._value} {self._unit}"
         else:
-            return f"{self._value} {self._unit}^{self._exponent}"
+            return f"{self._value} {self._unit}{to_sup(str(remove_zero(self._exponent)))}"
         
     def __eq__(self, other)-> bool:
         if self.__class__ == other.__class__ or other.__class__ == Unit:
@@ -270,7 +271,7 @@ class MultiUnit:
                 exponent = 1
                 unit = utop
             final_top_units.append(unit)
-            final_top_exponents.append(int(exponent))
+            final_top_exponents.append(float(exponent))
         for ubot in bottom_units:
             if "^" in ubot:
                 unit, exponent = ubot.split("^")
@@ -278,7 +279,7 @@ class MultiUnit:
                 exponent = 1
                 unit = ubot
             final_bottom_units.append(unit)
-            final_bottom_exponents.append(int(exponent))
+            final_bottom_exponents.append(float(exponent))
         
         top_half = [BaseUnit(x,y) for x,y in zip(final_top_units, final_top_exponents)]
         bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
@@ -320,113 +321,125 @@ class MultiUnit:
         
         matches_dict = defaultdict(lambda: 0)
         
-        for destructable_unit in DECONSTRUCTABLE_UNITS.values():
-            
-            
-            
-            top_base_units, bottom_base_units = self.parse_units(destructable_unit)
-            # make a copy to standardize
-            standard_base_top = deepcopy(top_base_units)
-            standard_base_bottom = deepcopy(bottom_base_units)
-            # standardize the unit (remove exponents)
-            for u1 in standard_base_top:
-                u1._exponent = 1
-            for u2 in standard_base_bottom:
-                u2._exponent = 1
-            # standardize the top list passed in 
-            standard_unit_top = deepcopy(top_list)
-            standard_unit_bottom = deepcopy(bottom_list)
-            for u1 in standard_unit_top:
-                u1._exponent = 1
-            for u2 in standard_unit_bottom:
-                u2._exponent = 1
-            
-            # check if units in conversion unit are a subset of the unit list
-            # if not moves on to next unit to check
-            if not set(standard_base_top).issubset(set(standard_unit_top)) or not set(standard_base_bottom).issubset(set(standard_unit_bottom)):
-                continue
-            
-            # # check exponents (now that we know a match may exist)
-            exp_match = False
-            for u1 in top_base_units:
-                for u2 in top_list:
-                    if u1._unit == u2._unit:
-                        # units should be combined at this point so 
-                        # each unit should exist only once in a top list / bottom list
-                        if u2._exponent < u1._exponent:
-                            break
-            # if no break              
-            else:
-                exp_match = True
+        unit_match = True
+        while unit_match:
+        
+            for destructable_unit in DECONSTRUCTABLE_UNITS.values():
                 
-                        # if no match try next unit
-            if not exp_match:
-                continue
+                
+                
+                top_base_units, bottom_base_units = self.parse_units(destructable_unit)
+                # make a copy to standardize
+                standard_base_top = deepcopy(top_base_units)
+                standard_base_bottom = deepcopy(bottom_base_units)
+                # standardize the unit (remove exponents)
+                for u1 in standard_base_top:
+                    u1._exponent = 1
+                for u2 in standard_base_bottom:
+                    u2._exponent = 1
+                # standardize the top list passed in 
+                standard_unit_top = deepcopy(top_list)
+                standard_unit_bottom = deepcopy(bottom_list)
+                for u1 in standard_unit_top:
+                    u1._exponent = 1
+                for u2 in standard_unit_bottom:
+                    u2._exponent = 1
+                
+                # check if units in conversion unit are a subset of the unit list
+                # if not moves on to next unit to check
+                if not set(standard_base_top).issubset(set(standard_unit_top)) or not set(standard_base_bottom).issubset(set(standard_unit_bottom)):
+                    continue
+                
+                
+                # # check exponents (now that we know a match may exist)
+                exp_match = False
+                for u1 in top_base_units:
+                    for u2 in top_list:
+                        if u1._unit == u2._unit:
+                            # units should be combined at this point so 
+                            # each unit should exist only once in a top list / bottom list
+                            if u2._exponent < u1._exponent:
+                                break
+                # if no break              
+                else:
+                    exp_match = True
+                    
+                            # if no match try next unit
+                if not exp_match:
+                    continue
+                
+                exp_match = False
+                for u1 in bottom_base_units:
+                    for u2 in bottom_list:
+                        if u1._unit == u2._unit:
+                            # units should be combined at this point so 
+                            # each unit should exist only once in a top list / bottom list
+                            if u2._exponent < u1._exponent:
+                                break
+                # if no break              
+                else:
+                    exp_match = True
+                
+                # if no match try next unit
+                if not exp_match:
+                    continue
+                
+                # know there is a match
+                # find number of matches
+                num_matches = 100
+                for u1 in top_base_units:
+                    for u2 in top_list:
+                        if u1._unit == u2._unit:
+                            matches = u2._exponent / u1._exponent
+                            if matches < num_matches:
+                                num_matches = matches
+                for u1 in bottom_base_units:
+                    for u2 in bottom_list:
+                        if u1._unit == u2._unit:
+                            matches = u2._exponent / u1._exponent
+                            if matches < num_matches:
+                                num_matches = matches
+                                        # get key of the value
+                value = [i for i in DECONSTRUCTABLE_UNITS if DECONSTRUCTABLE_UNITS[i]==destructable_unit]
+                # add to matches dictionary
+                matches_dict[value[0]] = num_matches   
+                
+                
+            # no matches return original data 
+            if matches_dict == {} or sum(matches_dict.values()) == 0:
+                unit_match = False
+                break
             
-            exp_match = False
-            for u1 in bottom_base_units:
-                for u2 in bottom_list:
-                    if u1._unit == u2._unit:
-                        # units should be combined at this point so 
-                        # each unit should exist only once in a top list / bottom list
-                        if u2._exponent < u1._exponent:
-                            break
-            # if no break              
-            else:
-                exp_match = True
             
-            # if no match try next unit
-            if not exp_match:
-                continue
+            # get max matches
+            best_match_unit = max(matches_dict, key=matches_dict.get)
             
-            # know there is a match
-            # find number of matches
-            num_matches = 100
-            for u1 in top_base_units:
-                for u2 in top_list:
-                    if u1._unit == u2._unit:
-                        matches = floor(u2._exponent / u1._exponent)
-                        if matches < num_matches:
-                            num_matches = matches
-            for u1 in bottom_base_units:
-                for u2 in bottom_list:
-                    if u1._unit == u2._unit:
-                        matches = floor(u2._exponent / u1._exponent)
-                        if matches < num_matches:
-                            num_matches = matches
-                                      # get key of the value
-            value = [i for i in DECONSTRUCTABLE_UNITS if DECONSTRUCTABLE_UNITS[i]==destructable_unit]
-            # add to matches dictionary
-            matches_dict[value[0]] = num_matches   
+            best_match_to_replace = DECONSTRUCTABLE_UNITS[best_match_unit]
+            best_match_val = matches_dict[best_match_unit]
+            
+            # get the best matches Base Unit lists
+            top_base_units, bottom_base_units = self.parse_units(best_match_to_replace)
+            
+            # update exponent 
+            for unit in top_base_units:
+                unit._exponent *= best_match_val
+            for unit in bottom_base_units:
+                unit._exponent *= best_match_val  
+            
+            # add tp lists, then cancel units
+            bottom_list.extend(top_base_units)
+            top_list.extend(bottom_base_units)
+            
+            top_list, bottom_list = self.cancel_units(top_list, bottom_list)
         
-        # no matches return original data 
-        if matches_dict == {}:
-            return top_list, bottom_list
-    
-        # get max matches
-        best_match_unit = max(matches_dict, key=matches_dict.get)
-        best_match_to_replace = DECONSTRUCTABLE_UNITS[best_match_unit]
-        best_match_val = matches_dict[best_match_unit]
+            
+            # add back simplified unit 
+            top_list.append(BaseUnit(best_match_unit, best_match_val))
+            
+            # clear dict 
+            matches_dict = {}
         
-        # get the best matches Base Unit lists
-        top_base_units, bottom_base_units = self.parse_units(best_match_to_replace)
-        
-        # update exponent 
-        for unit in top_base_units:
-            unit._exponent *= best_match_val
-        for unit in bottom_base_units:
-            unit._exponent *= best_match_val  
-        
-        # add tp lists, then cancel units
-        bottom_list.extend(top_base_units)
-        top_list.extend(bottom_base_units)
-        
-        final_top_list, final_bottom_list = self.cancel_units(top_list, bottom_list)
-        
-        # add back simplified unit 
-        final_top_list.append(BaseUnit(best_match_unit, best_match_val))
-        
-        return final_top_list, final_bottom_list
+        return top_list, bottom_list
         
     @staticmethod 
     def get_unit_class(unit: str):
@@ -500,9 +513,15 @@ class MultiUnit:
             return self.__class__(self._value*(top_factor/bottom_factor), unit)
         
     def __repr__(self):
-        top_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
+        try:
+            top_string = " * ".join(f"{x._unit}{to_sup(str(remove_zero(x._exponent)))}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
+        except KeyError:
+            top_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
         if self._bottom_half:
-            bottom_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._bottom_half)
+            try:
+                bottom_string = " * ".join(f"{x._unit}{to_sup(str(remove_zero(x._exponent)))}" if x._exponent != 1 else f"{x._unit}" for x in self._bottom_half)
+            except KeyError:
+                bottom_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._bottom_half)
             return f"{self._value} {top_string} / {bottom_string}"
         else:
             return f"{self._value} {top_string}"
@@ -691,6 +710,13 @@ class MultiUnit:
                 u1._exponent *= other
             for u2 in new_bottom_half:
                 u2._exponent *= other
+                
+            new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+            new_top_half = self.combine_units(new_top_half)
+            new_bottom_half = self.combine_units(new_bottom_half)
+            new_top_half, new_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
+            new_top_half, new_bottom_half = self.simplify_units(new_top_half, new_bottom_half)
+            
             
             return MultiUnit(self._value**other,top_half=new_top_half, bottom_half=new_bottom_half)
         raise TypeError(f"Exponentiating class {other.__class__} and {self.__class__} is unsupported")

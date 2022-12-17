@@ -12,12 +12,13 @@ def condensation_transfer_coefficient(k: ThermalConductivity,
                                       T2: Temperature, T1: Temperature, 
                                       diameter: Length, mu: DynamicViscosity):
     
+    
+    
 
-    h = 0.729*((k**3 * rho**2 * g * hvap)/(num_pipes * (T2-T1) * diameter * mu))**(1/4)
+    h: MultiUnit = 0.729*((k**3 * rho**2 * g * hvap)/(num_pipes * (T2-T1) * diameter * mu))**(1/4)
     
     # units here get messed up so need to manually make them nice (units do check out though)
     h = do_weird_simplifications(h)
-    
     
     return h
 

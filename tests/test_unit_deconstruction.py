@@ -7,12 +7,13 @@ def test_deconstruct_cancel():
     
     r = m/P
     assert(r == 1.0)
-    
-def test_unit_simplification():
-    k = MultiUnit(1, "kg^2/m*s^3")
-    e = MultiUnit(1, "kg/s")
-    w = k/e
-    assert(w == Unit(1.0,"Pa"))
+
+@pytest.mark.parametrize("unit1,unit2,expected", [(MultiUnit(1, "kg^2/m*s^3"), MultiUnit(1, "kg/s"), Unit(1.0, "Pa")),
+                                                  (MultiUnit(1, "J^2/s^2"), MultiUnit(1, "J/s"), Unit(1.0, "W"))
+                                                        ])
+def test_unit_simplification(unit1, unit2, expected):
+    print(unit1/unit2)
+    assert(unit1/unit2 == expected)
     
 def test_unit_simplification2():
     k = MultiUnit(1, "kg/m*s")

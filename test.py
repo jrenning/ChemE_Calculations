@@ -36,16 +36,27 @@ k = ThermalConductivity(0.6, "W/m*K")
 # ans = flux_max_boiling(hvap, Density(0.623, "kg/m^3"), Density(957.7, "kg/m^3"), 
 #                        MultiUnit(.058, "kg/s^2"), g)
 
-# ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
+ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
-mat_strength = Pressure(85000, "psi")
-wall_thickness = Length(1.9E-3, "m")
-radius = Length(1.25, "m")
+# mat_strength = Pressure(85000, "psi")
+# wall_thickness = Length(1.9E-3, "m")
+# radius = Length(1.25, "m")
 
 
-ans = max_vessel_pressure(mat_strength, wall_thickness, 
-                          radius, "sphere")
+# ans = max_vessel_pressure(mat_strength, wall_thickness, 
+#                           radius, "sphere")
 
+# j = MultiUnit(1, "J^2/s^2")
+# j2 = MultiUnit(1, "J/s")
+
+# d = Length(1, 'm')
+# rho = MultiUnit(1.5,"kg/m^3")
+# v = MultiUnit(2, "m/s")
+# mu = MultiUnit(3, "kg/m*s")
+# r = (rho*v*d)/mu
+
+
+# ans = j/j2
 
 print(ans)
 
