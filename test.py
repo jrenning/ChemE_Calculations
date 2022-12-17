@@ -1,8 +1,9 @@
 from cheme_calculations.heat_transfer import condensation_transfer_coefficient, ThermalConductivity, HeatTransferCoefficient
 from cheme_calculations.heat_transfer.phase_changes import flux_max_boiling
+from cheme_calculations.heat_transfer.unit_types import Power
 from cheme_calculations.units import Temperature, Length, Time
 from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, Volume
-from cheme_calculations.units.units import MultiUnit, Pressure
+from cheme_calculations.units.units import BaseUnit, MultiUnit, Pressure
 
 from cheme_calculations.process_safety import max_vessel_pressure
 
@@ -56,7 +57,7 @@ ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 # r = (rho*v*d)/mu
 
 
-# ans = j/j2
+
 
 print(ans)
 

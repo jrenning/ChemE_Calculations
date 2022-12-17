@@ -2,7 +2,7 @@ from cheme_calculations.units.units import BaseUnit, MultiUnit
 
 
 unit_simplifications = {
-    "W^0.75*Pa^0.25/m^1.25*s^0.25*K": "W/m^2*K"
+    "kg/s^3*K": "W/m^2*K"
 }
 
 # only used when an equation uses alot of units and simplifying requires a non obvious step

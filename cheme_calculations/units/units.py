@@ -127,6 +127,8 @@ class Unit:
                 return MultiUnit( top_half=[BaseUnit(self._unit, self._exponent)], bottom_half=[BaseUnit(other._unit, other._exponent)], value=self._value / other._value)
         elif isinstance(other, Union[int, float]):
             return self.__class__(self._value / other, self._unit, self._exponent)
+        elif other.__class__ == MultiUnit or other.__class__.__bases__[0] == MultiUnit:
+            return MultiUnit.__rtruediv__(other, self)
         else:
             raise TypeError(f"Dividing class {self.__class__} and {other.__class__} is unsupported")
     def __mul__(self, other):
@@ -257,13 +259,34 @@ class MultiUnit:
     
     @staticmethod
     def parse_units(unit_string: str):
-        top_half, bottom_half = unit_string.split("/")
+        try:
+            top_half, bottom_half = unit_string.split("/")
+            bottom_units = bottom_half.strip().split("*")
+            final_bottom_exponents = []
+            final_bottom_units = []
+            
+            for ubot in bottom_units:
+                if "^" in ubot:
+                    unit, exponent = ubot.split("^")
+                else:
+                    exponent = 1
+                    unit = ubot
+                final_bottom_units.append(unit)
+                final_bottom_exponents.append(float(exponent))
+                
+                        
+            bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
+        # if no bottom half of units (really only a problem with W yeah)
+        except ValueError:
+            top_half = unit_string
+            bottom_half = []
+            
+            
         top_units = top_half.strip().split("*")
-        bottom_units = bottom_half.strip().split("*")
+        
         final_top_units = []
         final_top_exponents = []
-        final_bottom_units = []
-        final_bottom_exponents = []
+        
         for utop in top_units:
             if "^" in utop:
                 unit, exponent = utop.split("^")
@@ -272,50 +295,58 @@ class MultiUnit:
                 unit = utop
             final_top_units.append(unit)
             final_top_exponents.append(float(exponent))
-        for ubot in bottom_units:
-            if "^" in ubot:
-                unit, exponent = ubot.split("^")
-            else:
-                exponent = 1
-                unit = ubot
-            final_bottom_units.append(unit)
-            final_bottom_exponents.append(float(exponent))
-        
+
         top_half = [BaseUnit(x,y) for x,y in zip(final_top_units, final_top_exponents)]
-        bottom_half = [BaseUnit(x,y) for x,y in zip(final_bottom_units, final_bottom_exponents)]
         return top_half, bottom_half
+    
+    
+        
     
     def deconstruct_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
         new_top_list = []
         new_bottom_list = []
         
-        for unit in top_list:
-            if unit._unit in DECONSTRUCTABLE_UNITS.keys():
-                new_string = DECONSTRUCTABLE_UNITS[unit._unit]
-                top_half, bottom_half = self.parse_units(new_string)
-                # update exponents as well
-                top_half = [x**unit._exponent for x in top_half]
-                bottom_half = [x**unit._exponent for x in bottom_half]
-                new_top_list.extend(top_half)
-                new_bottom_list.extend(bottom_half)
-            else:
-                new_top_list.append(unit)
-                
-        for unit in bottom_list:
-            if unit._unit in DECONSTRUCTABLE_UNITS.keys():
-                new_string = DECONSTRUCTABLE_UNITS[unit._unit]
+        top_list = deepcopy(top_list)
+        bottom_list = deepcopy(bottom_list)
+        
+        # run a loop any time the last loop had a match 
+        # catches units that decompose into units that decompose further 
+        unit_match = True
+        while unit_match:
+            unit_match = False
+            for i, unit in enumerate(top_list):
+                if unit._unit in DECONSTRUCTABLE_UNITS.keys():
+                    new_string = DECONSTRUCTABLE_UNITS[unit._unit]
+                    top_half, bottom_half = self.parse_units(new_string)
+                    # update exponents as well
+                    top_half = [x**unit._exponent for x in top_half]
+                    bottom_half = [x**unit._exponent for x in bottom_half]
+                    # remove unit that got deconstructed 
+                    del top_list[i]
+                    # add new units
+                    top_list.extend(top_half)
+                    bottom_list.extend(bottom_half)
+                    
+                    unit_match = True
+                    
+            for i, unit in enumerate(bottom_list):
+                if unit._unit in DECONSTRUCTABLE_UNITS.keys():
+                    new_string = DECONSTRUCTABLE_UNITS[unit._unit]
 
-                top_half, bottom_half = self.parse_units(new_string)
-                # update exponents as well
-                top_half = [x**unit._exponent for x in top_half]
-                bottom_half = [x**unit._exponent for x in bottom_half]
-                new_bottom_list.extend(top_half)
-                new_top_list.extend(bottom_half)
-            else:
-                new_bottom_list.append(unit)
+                    top_half, bottom_half = self.parse_units(new_string)
+                    # update exponents as well
+                    top_half = [x**unit._exponent for x in top_half]
+                    bottom_half = [x**unit._exponent for x in bottom_half]
+                    # delete old unit 
+                    del bottom_list[i]
+                    # add new units
+                    bottom_list.extend(top_half)
+                    top_list.extend(bottom_half)
+                    unit_match = True
+        
 
         
-        return new_top_list, new_bottom_list
+        return top_list, bottom_list
     
     def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit], fractional: bool=False):
         
@@ -548,7 +579,7 @@ class MultiUnit:
     def __truediv__(self,other):
         
         # same class or inherit from same class 
-        if self.__class__ == other.__class__ or  other.__class__.__bases__[0] == MultiUnit or other.__class__ == MultiUnit:
+        if other.__class__.__bases__[0] == MultiUnit or other.__class__ == MultiUnit:
             # same units 
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return self._value / other._value
@@ -573,6 +604,10 @@ class MultiUnit:
                 if len(final_top_half) == 1 and len(final_bottom_half) == 0:
                     return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
                 
+                # one unit in the bottom
+                if len(final_top_half) == 0 and len(final_bottom_half) == 1:
+                    return Unit(self._value / other._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
+                
                 return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
             new_top_half = deepcopy(self._top_half)
@@ -593,6 +628,10 @@ class MultiUnit:
             #if just left with one unit
             if len(final_top_half) == 1 and len(final_bottom_half) == 0:
                 return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+            
+            # one unit in the bottom
+            if len(final_top_half) == 0 and len(final_bottom_half) == 1:
+                return Unit(self._value / other._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
             
             return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
         
@@ -650,28 +689,34 @@ class MultiUnit:
         elif other.__class__ == Unit or other.__class__.__bases__[0] == Unit:
             
             
-            new_top_half = self._top_half.deepcopy()
-            new_bottom_half = self._bottom_half.deepcopy()
+            new_top_half = deepcopy(self._top_half)
+            new_bottom_half = deepcopy(self._bottom_half)
             # append unit to the bottom half 
             new_bottom_half.append(BaseUnit(other._unit, other._exponent))
             # swap halfs 
             new_top_half, new_bottom_half = new_bottom_half, new_top_half
             
-
+            # deconstruct units
+            new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
             
             new_top_half = self.combine_units(new_top_half)
                         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
             
+            final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
+            
             # if all units cancel
             if len(final_top_half) == 0 and len(final_bottom_half) == 0:
                 return other._value / self._value
             
-            #if just left with one unit
+            #if just left with one unit in top
             if len(final_top_half) == 1 and len(final_bottom_half) == 0:
                 return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+            # one unit in the bottom
+            if len(final_top_half) == 0 and len(final_bottom_half) == 1:
+                return Unit(self._value / other._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
                             
-            return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
+            return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
             
         
         else:

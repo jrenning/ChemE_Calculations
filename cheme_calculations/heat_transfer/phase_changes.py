@@ -17,6 +17,7 @@ def condensation_transfer_coefficient(k: ThermalConductivity,
 
     h: MultiUnit = 0.729*((k**3 * rho**2 * g * hvap)/(num_pipes * (T2-T1) * diameter * mu))**(1/4)
     
+    print(h)
     # units here get messed up so need to manually make them nice (units do check out though)
     h = do_weird_simplifications(h)
     
