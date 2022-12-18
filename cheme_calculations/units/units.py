@@ -16,6 +16,7 @@ T = TypeVar('T')
 class UnitConversionError(Exception):
     pass
 
+
 # milli. centi, deci, kilo, mega
 prefixes = ["m", "c", "d", "k", "M"]
 
@@ -102,6 +103,8 @@ class Unit:
         if isinstance(other, self.__class__):
             if (self._unit == other._unit) and (self._exponent == other._exponent):
                 return self.__class__(self._value + other._value, self._unit, self._exponent)
+            else:
+                raise TypeError(f"Adding unit {self._unit} and {other._unit} is unsupported")
         elif isinstance(other, Union[int, float]):
             return self.__class__( self._value + other,self._unit)
         else:
@@ -110,6 +113,8 @@ class Unit:
         if isinstance(other, self.__class__):
             if (self._unit == other._unit) and (self._exponent == other._exponent):
                 return self.__class__( self._value - other._value, self._unit,  self._exponent)
+            else:
+               raise TypeError(f"Subtracting unit {self._unit} and {other._unit} is unsupported") 
         elif isinstance(other, Union[int, float]):
             return self.__class__(self._value - other, self._unit)
         else:
@@ -144,7 +149,7 @@ class Unit:
         elif isinstance(other, Union[int, float]):
             return self.__class__(self._value * other, self._unit)
         else:
-            raise NotImplementedError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
+            raise TypeError(f"Multiplying class {self.__class__} and {other.__class__} is unsupported")
     
     def __rmul__(self, other):
         if isinstance(other, Union[int, float]):
@@ -177,7 +182,7 @@ class Unit:
             try:
                 standard_val = self.to_standard_conversions[self._unit](self._value)
             except KeyError as _:
-                raise TypeError(f"{self._unit} can not be converted to {unit}")
+                raise UnitConversionError(f"{self._unit} can not be converted to {unit}")
                 
             val = self.from_standard_conversions[unit](standard_val)
             if inplace:
@@ -210,7 +215,7 @@ class BaseUnit:
                      
             return BaseUnit(self._unit, self._exponent*other)
         else:
-            raise NotImplementedError(f"Taking a base unit to a power with {other} is not allowed")
+            raise TypeError(f"Taking a base unit to a power with {other} is not allowed")
         
     
     
@@ -568,12 +573,16 @@ class MultiUnit:
         if self.__class__ == other.__class__:
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return MultiUnit(value= self._value + other._value, top_half=self._top_half, bottom_half=self._bottom_half)
+            else:
+               raise TypeError(f"Adding units {self.__repr__()} and {other.__repr__()} is unsupported") 
         else:
             raise TypeError(f"Adding class {self.__class__} and {other.__class__} is unsupported")
     def __sub__(self, other):
         if self.__class__ == other.__class__:
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return MultiUnit(value= self._value - other._value, top_half=self._top_half, bottom_half=self._bottom_half)
+            else:
+                raise TypeError(f"Subtracting unit {self.__repr__()} and {other.__repr__()} is unsupported")
         else:
             raise TypeError(f"Subtracting class {self.__class__} and {other.__class__} is unsupported")
     def __truediv__(self,other):

@@ -7,6 +7,25 @@ import pytest
 def test_unit_addition(operand1, operand2, expected):
     T = operand1 + operand2
     assert(T == expected)
+    
+
+@pytest.mark.parametrize("operand1, operand2", [(Unit(1, "K"), MultiUnit(2, "K/W")),
+                                                (Unit(1, "K"), Unit(1, "Pa")), 
+                                                (MultiUnit(2, "K/W"), MultiUnit(4, "m/s"))])
+def test_improper_addition(operand1, operand2):
+    
+    # e info makes sure it doesn't fail for just displaying a message 
+    with pytest.raises(TypeError) as e_info:
+        operand1 + operand2
+
+@pytest.mark.parametrize("operand1, operand2", [(Unit(1, "K"), MultiUnit(2, "K/W")),
+                                                (Unit(1, "K"), Unit(1, "Pa")), 
+                                                (MultiUnit(2, "K/W"), MultiUnit(4, "m/s"))])    
+def test_improper_subtraction(operand1, operand2):
+    # e info makes sure it doesn't fail for just displaying a message 
+    with pytest.raises(TypeError) as e_info:
+        operand1 - operand2
+
 
 @pytest.mark.parametrize("operand1,operand2,expected", [(Temperature(350, 'K'),50,Temperature(300, 'K')),
                                                         (Temperature(350, 'K'), Temperature(350, 'K'), Temperature(0, 'K')),
@@ -33,18 +52,6 @@ def test_unit_division(operand1, operand2, expected):
     assert(operand1 / operand2 == expected)
 
     
-def test_temperature_conversion():
-    T = Temperature(350, 'K')
-    T2 = T.convert_to('C')
-    assert(T2._unit == 'C')
-    assert(T2._value == 350-273.15)
-
-def test_temperature_comversion2():
-    T = Temperature(350, 'C')
-    T2 = T.convert_to('R')
-    assert(T2._unit == "R")
-    assert(T2._value == 1121.67)
-    
     
 def test_renolyds():
     d = Length(1, 'm')
@@ -54,8 +61,17 @@ def test_renolyds():
     r = (rho*v*d)/mu
     assert(r == 1.0)
 
-def test_equaility():
+def test_equality():
     mu = MultiUnit(3, "kg/m*s")
     mu2 = MultiUnit(3, "kg/s*m")
     assert(mu == mu2)
+    
+    
+def test_negation_unit():
+    u = -Unit(5, "m")
+    assert(u._value == -5)
+    
+def test_negation_multiunit():
+    u = -MultiUnit(5, "W/m")
+    assert(u._value == -5)
     
