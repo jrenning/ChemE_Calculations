@@ -39,13 +39,24 @@ MassUnits = [f"{x}{y}" for x in prefixes for y in MassUnits]
 MassUnits.extend(["g", "lb"])
 MassDict = { k:"Mass" for k in MassUnits }
 
+EnergyUnits = ["BTU", "J"]
+EnergyDict = {k: "Energy" for k in EnergyUnits}
+
+PressureUnits = ["Pa"]
+PressureUnits = [f"{x}{y}" for x in prefixes for y in PressureUnits]
+PressureUnits.extend(["psi", "Pa", "atm", "bar"])
+PressureDict = {k: "Pressure" for k in PressureUnits}
+
+
 # registers units to type of unit it is 
 UNIT_REGISTRY = {
     **TemperatureDict,
     **LengthDict,
     **MassDict,
     **CurrentDict,
-    **TimeDict
+    **TimeDict,
+    **EnergyDict,
+    **PressureDict,
 }
 
 LengthUnit = Literal["m", "ft"]
@@ -56,6 +67,9 @@ DECONSTRUCTABLE_UNITS = {
     "W": "J/s",
     "psi": "lbf/in^2",
 }
+
+
+
  
 class Unit:
     """
@@ -217,7 +231,8 @@ class BaseUnit:
         else:
             raise TypeError(f"Taking a base unit to a power with {other} is not allowed")
         
-    
+
+
     
 class MultiUnit:
     def __init__(self, value: float, unit: str="", *,  top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):
@@ -307,7 +322,8 @@ class MultiUnit:
     
         
     
-    def deconstruct_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
+    def deconstruct_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit], 
+                          one_pass: bool = False):
         new_top_list = []
         new_bottom_list = []
         
@@ -331,8 +347,8 @@ class MultiUnit:
                     # add new units
                     top_list.extend(top_half)
                     bottom_list.extend(bottom_half)
-                    
-                    unit_match = True
+                    if not one_pass:
+                        unit_match = True
                     
             for i, unit in enumerate(bottom_list):
                 if unit._unit in DECONSTRUCTABLE_UNITS.keys():
@@ -347,9 +363,8 @@ class MultiUnit:
                     # add new units
                     bottom_list.extend(top_half)
                     top_list.extend(bottom_half)
-                    unit_match = True
-        
-
+                    if not one_pass:
+                        unit_match = True
         
         return top_list, bottom_list
     
@@ -495,6 +510,10 @@ class MultiUnit:
                 return Temperature
             case "Current":
                 return Current
+            case "Energy":
+                return Energy
+            case "Pressure":
+                return Pressure
             case _:
                 raise KeyError(f"UNIT REGISTRY is improperly formatted")
             
@@ -504,8 +523,9 @@ class MultiUnit:
         convert_bottom = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in convert_bottom]
         
         # get top and bottom half of self 
-        new_top_half = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in self._top_half]
-        new_bottom_half = [self.get_unit_class(x._unit)(1,x._unit, x._exponent) for x in self._bottom_half]
+        new_top_half, new_bottom_half = self.deconstruct_units(self._top_half, self._bottom_half, True)
+        new_top_half = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in new_top_half]
+        new_bottom_half = [self.get_unit_class(x._unit)(1,x._unit, x._exponent) for x in new_bottom_half]
         
         
         # if converting to the same unit return
@@ -517,30 +537,50 @@ class MultiUnit:
         self_unit_dict = defaultdict(lambda: 0)
         
         for u1 in convert_top:
-            new_unit_dict[str(self.get_unit_class(u1._unit))] += 1
+            new_unit_dict[str(self.get_unit_class(u1._unit))] += 1*u1._exponent
         for u2 in convert_bottom:
-            new_unit_dict[str(self.get_unit_class(u2._unit))] += 1
+            new_unit_dict[str(self.get_unit_class(u2._unit))] += 1*u2._exponent
         for u1 in new_top_half:
-            self_unit_dict[str(self.get_unit_class(u1._unit))] += 1
+            self_unit_dict[str(self.get_unit_class(u1._unit))] += 1*u1._exponent
         for u2 in new_bottom_half:
-            self_unit_dict[str(self.get_unit_class(u2._unit))] += 1
+            self_unit_dict[str(self.get_unit_class(u2._unit))] += 1*u2._exponent
             
         if new_unit_dict != self_unit_dict:
-            raise UnitConversionError(f"The conversion to {unit} is not allowed")
+            raise UnitConversionError(f"The conversion from {self.__repr__()} to {unit} is not allowed")
         
         top_factor = 1
         bottom_factor = 1
         for u1 in new_top_half:
             for u2 in convert_top:
                 if u1.__class__ == u2.__class__:
-                    u3 = u1.convert_to(u2._unit)
-                    top_factor *= u3._value
+                    # temperature conversion works different in a multi unit
+                    if u1._unit in ["K", "C"] and u2._unit in ["K", "C"]:
+                        top_factor *= 1
+                    elif u1._unit in ["F", "R"] and u2._unit in ["F", "R"]:
+                        top_factor *= 1
+                    elif u1._unit in ["K", "C"] and u2._unit in ["F", "R"]:
+                        top_factor *= (1.8*u1._exponent)
+                    elif u1._unit in ["R", "F"] and u2._unit in ["K", "C"]:
+                        top_factor *= ((5/9)*u1._exponent)
+                    else:
+                        u3 = u1.convert_to(u2._unit)
+                        top_factor *= (u3._value**u1._exponent)
         
         for u1 in new_bottom_half:
             for u2 in convert_bottom:
                 if u1.__class__ == u2.__class__:
-                    u3 = u1.convert_to(u2._unit)
-                    bottom_factor *= u3._value
+                    # temperature conversion works different in a multi unit
+                    if u1._unit in ["K", "C"] and u2._unit in ["K", "C"]:
+                        bottom_factor *= 1
+                    elif u1._unit in ["F", "R"] and u2._unit in ["F", "R"]:
+                        bottom_factor *= 1
+                    elif u1._unit in ["K", "C"] and u2._unit in ["F", "R"]:
+                        bottom_factor *= (1.8*u1._exponent)
+                    elif u1._unit in ["R", "F"] and u2._unit in ["K", "C"]:
+                        bottom_factor *= ((5/9)*u1._exponent)
+                    else:
+                        u3 = u1.convert_to(u2._unit)
+                        bottom_factor *= (u3._value**u1._exponent)
             
         
         if inplace:
@@ -777,6 +817,8 @@ class MultiUnit:
     
     def __neg__(self):
         return self.__class__(-self._value,top_half=self._top_half, bottom_half=self._bottom_half)
+
+
 class Temperature(Unit):
     standard: str = "K"
     to_standard_conversions = {
@@ -793,7 +835,6 @@ class Temperature(Unit):
         if unit not in TemperateUnits:
             raise TypeError(f"The unit of {unit} is not valid for temperature")
         super().__init__(value, unit, exponent)
-
         
 class Pressure(Unit):
     standard: str = "atm"
