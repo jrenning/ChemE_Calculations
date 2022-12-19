@@ -1,13 +1,13 @@
 from .unit_types import ThermalConductivity, HeatFlux
 from cheme_calculations.units import Temperature, Length
 from cheme_calculations.units.property_units import Area
-from typing import List
+from cheme_calculations.utility import solvable_for
 from math import pi
 import math
 
 
 
-
+@solvable_for(solvable=["T1", "T2", "thickness", "q"])
 def planar_flux(k: ThermalConductivity, T1: Temperature, T2: Temperature,
                 A: Area,
                 thickness: Length)-> HeatFlux:

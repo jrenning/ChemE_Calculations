@@ -1,5 +1,7 @@
+from pprint import pprint
 from cheme_calculations.heat_transfer import condensation_transfer_coefficient, ThermalConductivity, HeatTransferCoefficient
 from cheme_calculations.heat_transfer.phase_changes import flux_max_boiling
+from cheme_calculations.heat_transfer.steady_state_conduction import planar_flux
 from cheme_calculations.heat_transfer.unit_types import Power
 from cheme_calculations.units import Temperature, Length, Time
 from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, Volume
@@ -37,7 +39,7 @@ k = ThermalConductivity(0.6, "W/m*K")
 # ans = flux_max_boiling(hvap, Density(0.623, "kg/m^3"), Density(957.7, "kg/m^3"), 
 #                        MultiUnit(.058, "kg/s^2"), g)
 
-ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
+# ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 # mat_strength = Pressure(85000, "psi")
 # wall_thickness = Length(1.9E-3, "m")
@@ -56,8 +58,7 @@ ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 # mu = MultiUnit(3, "kg/m*s")
 # r = (rho*v*d)/mu
 
-
-
+ans = planar_flux(k, T1, T2, A, x)
 
 print(ans)
 

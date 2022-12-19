@@ -1,16 +1,34 @@
 from itertools import chain, combinations
-from typing import Literal
+from typing import Callable, List, Literal
+from inspect import signature
+from functools import wraps
 
 # to get around circular import 
 import cheme_calculations.units as u
 
 
-__all__ = ["powerset", "getR_constant", "to_sup", "remove_zero"]
+__all__ = ["powerset", "getR_constant", "to_sup", "remove_zero", "solvable_for"]
 
 # found here https://stackoverflow.com/questions/1482308/how-to-get-all-subsets-of-a-set-powerset
 def powerset(iterable):
     s = list(iterable)
     return list(chain.from_iterable(combinations(s, r) for r in range(1, len(s)+1)))
+
+
+def solvable_for(solvable: List[str]):
+    def inner(func: Callable):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            sig = signature(func)
+            print(solvable)
+            a = func(*args, **kwargs)
+            return a
+        
+        return wrapper
+    
+    return inner
+    
+
 
 
 def remove_zero(x: float):
@@ -19,6 +37,14 @@ def remove_zero(x: float):
         return int(x)
     else:
         return x
+
+
+def get_prefix(unit: str):
+    if len(unit) == 1:
+        return ""
+    else:
+        return unit[0]
+        
 
 # found here https://stackoverflow.com/questions/13875507/convert-numeric-strings-to-superscript
 def to_sup(s):

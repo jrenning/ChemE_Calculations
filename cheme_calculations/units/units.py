@@ -9,7 +9,7 @@ from cheme_calculations.utility.utility import remove_zero
 
 
 __all__ = ["Unit", "MultiUnit", "BaseUnit", "Temperature", "Pressure", 
-           "Mass", "Current", "Energy", "Time", "Length"]
+           "Mass", "Current", "Energy", "Time", "Length", "UNIT_REGISTRY"]
 
 T = TypeVar('T')
 
@@ -25,7 +25,7 @@ TemperatureDict = {k:"Temperature" for k in TemperateUnits}
 
 LengthUnits = ["m"]
 LengthUnits = [f"{x}{y}" for x in prefixes for y in LengthUnits]
-LengthUnits.extend(["m", "ft"])
+LengthUnits.extend(["m", "ft", "in"])
 LengthDict = { k:"Length" for k in LengthUnits }
 
 CurrentUnits = ["A"]
@@ -39,13 +39,19 @@ MassUnits = [f"{x}{y}" for x in prefixes for y in MassUnits]
 MassUnits.extend(["g", "lb"])
 MassDict = { k:"Mass" for k in MassUnits }
 
-EnergyUnits = ["BTU", "J"]
+EnergyUnits = ["J"]
+EnergyUnits = [f"{x}{y}" for x in prefixes for y in EnergyUnits]
+EnergyUnits.extend(["J", "BTU"])
 EnergyDict = {k: "Energy" for k in EnergyUnits}
 
 PressureUnits = ["Pa"]
 PressureUnits = [f"{x}{y}" for x in prefixes for y in PressureUnits]
-PressureUnits.extend(["psi", "Pa", "atm", "bar"])
+PressureUnits.extend(["psi", "Pa", "atm", "bar", "mmHg"])
 PressureDict = {k: "Pressure" for k in PressureUnits}
+
+ForceUnits = ["N"]
+ForceUnits = [f"{x}{y}" for x in prefixes for y in ForceUnits]
+ForceUnits.extend(["N", "lbf"])
 
 
 # registers units to type of unit it is 
@@ -180,25 +186,36 @@ class Unit:
     def __neg__(self):
         return self.__class__(-self._value, self._unit, self._exponent)
     def convert_to(self,unit: str, inplace: bool =False):
+        """Converts a unit to another given unit 
+
+        :param unit: The unit to convert to 
+        :type unit: str
+        :param inplace:  whether the conversion should create a 
+        new object or not, defaults to False
+        :type inplace: bool, optional
+        :raises UnitConversionError: Raises an error if a unit can't be converted
+        :return: Returns a unit of the same class as self withe new value and unit
+        :rtype: self.type
+        """
         if (self._unit == unit):
             return self
         if (unit == self.standard):
-            val = self.to_standard_conversions[self._unit](self._value)
+            val = self.to_standard_conversions[self._unit](self._value)**self._exponent
             if inplace:
                 return self.__class__.__init__(self, val, unit, self._exponent)
             return self.__class__(val, unit, self._exponent)
         elif (self._unit == self.standard):
-            val = self.from_standard_conversions[unit](self._value)
+            val = self.from_standard_conversions[unit](self._value)**self._exponent
             if inplace:
                 return self.__class__.__init__(self, val, unit, self._exponent)
             return self.__class__(val, unit, self._exponent)
         else:
             try:
-                standard_val = self.to_standard_conversions[self._unit](self._value)
+                standard_val = self.to_standard_conversions[self._unit](self._value)**self._exponent
             except KeyError as _:
                 raise UnitConversionError(f"{self._unit} can not be converted to {unit}")
                 
-            val = self.from_standard_conversions[unit](standard_val)
+            val = self.from_standard_conversions[unit](standard_val)**self._exponent
             if inplace:
                 return self.__class__.__init__(self, val, unit, self._exponent)
             return self.__class__(val, unit, self._exponent)
@@ -564,7 +581,7 @@ class MultiUnit:
                         top_factor *= ((5/9)*u1._exponent)
                     else:
                         u3 = u1.convert_to(u2._unit)
-                        top_factor *= (u3._value**u1._exponent)
+                        top_factor *= (u3._value)
         
         for u1 in new_bottom_half:
             for u2 in convert_bottom:
@@ -580,7 +597,7 @@ class MultiUnit:
                         bottom_factor *= ((5/9)*u1._exponent)
                     else:
                         u3 = u1.convert_to(u2._unit)
-                        bottom_factor *= (u3._value**u1._exponent)
+                        bottom_factor *= (u3._value)
             
         
         if inplace:
@@ -831,7 +848,7 @@ class Temperature(Unit):
         "C": lambda x: x - 273.15,
         "R": lambda x: x * 1.8,
     }
-    def __init__(self, value:float, unit: Literal["K", "C", "F", "R"]="K", exponent: int =1):
+    def __init__(self, value:float, unit: TemperateUnits="K", exponent: int =1):
         if unit not in TemperateUnits:
             raise TypeError(f"The unit of {unit} is not valid for temperature")
         super().__init__(value, unit, exponent)
@@ -840,24 +857,37 @@ class Pressure(Unit):
     standard: str = "atm"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "mPa": lambda x: (x/1000) / 101325,
+        "dPa": lambda x: (x/10) / 101325,
         "Pa": lambda x: x / 101325,
+        "kPa": lambda x: (x*1000) / 101325,
+        "MPa": lambda x: (x*10E6) / 101325,
         "bar": lambda x: x*0.986923,
         "mmHg": lambda x: x/760,
+        "psi": lambda x: x/14.696,
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "mPa": lambda x: (x*1000) * 101325,
+        "dPa": lambda x: (x*10) * 101325,
         "Pa": lambda x: x*101325,
+        "kPa": lambda x: (x/1000) * 101325,
+        "MPa": lambda x: (x/10E6) * 101325,
         "bar": lambda x: x*1.01325,
         "mmHg": lambda x: x * 760,
+        "psi": lambda x: x*14.696,
     }
-    def __init__(self, value:float, unit: Literal["Pa", "kPa", "bar", "atm", "mmHg"]="atm",
+    def __init__(self, value:float, unit: PressureUnits="atm",
                  exponent: int = 1):
+        if unit not in PressureUnits:
+            raise TypeError(f"The unit of {unit} is not valid for pressure")
         super().__init__(value, unit, exponent)
     
 class Length(Unit):
     standard: str = "m"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "in": lambda x: (x/12)*0.3048,
         "ft": lambda x: x*0.3048,
         "mm": lambda x: x/1000,
         "cm": lambda x: x/100,
@@ -866,6 +896,7 @@ class Length(Unit):
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "in": lambda x: (x*12) * 3.28084,
         "ft": lambda x: x*3.28084,
         "mm": lambda x: x*1000,
         "cm": lambda x: x*100,
@@ -873,7 +904,7 @@ class Length(Unit):
         "km": lambda x: x/1000
         
     }
-    def __init__(self,value:float, unit: Literal["m", "ft"],
+    def __init__(self,value:float, unit: LengthUnit,
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
 
@@ -899,13 +930,21 @@ class Energy(Unit):
     standard: str = "J"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "mJ": lambda x: x/1000,
+        "dJ": lambda x: x/10,
+        "kJ": lambda x: x*1000,
+        "MJ": lambda x: x*1E6,
         "BTU": lambda x: x*1055.056
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "mJ": lambda x: x*1000,
+        "dJ": lambda x: x*10,
+        "kJ": lambda x: x/1000,
+        "MJ": lambda x: x/1E6,
         "BTU": lambda x: x/1055.056
     }
-    def __init__(self,value:float, unit: Literal["J", "BTU"],
+    def __init__(self,value:float, unit: EnergyUnits,
                 exponent: int = 1):
         super().__init__(value, unit, exponent)
 
@@ -913,25 +952,57 @@ class Mass(Unit):
     standard: str = "kg"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "mg": lambda x: x/1E6,
+        "dg": lambda x: x/10000,
+        "g": lambda x: x/1000,
+        "Mg": lambda x: x*1000,
         "lb": lambda x: x*0.453592
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "mg": lambda x: x*1E6,
+        "dg": lambda x: x*10000,
+        "g": lambda x: x*1000,
+        "Mg": lambda x: x/1000,
         "lb": lambda x: x*2.20462
     }
-    def __init__(self,value:float, unit: Literal["kg", "lb"],
+    def __init__(self,value:float, unit: MassUnits,
                 exponent: int = 1):
         super().__init__(value, unit, exponent)
           
-          
+        
 class Current(Unit):
     standard: str = "A"
     def __init__(self,value:float, unit: Literal["A"],
                 exponent: int = 1):
+        if unit not in CurrentUnits:
+            raise TypeError(f"The unit of {unit} is not valid for temperature")
         super().__init__(value, unit, exponent)
 
     
-
+class Force(Unit):
+    standard: str = "N"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "mN": lambda x: x/1000,
+        "dN": lambda x: x/10,
+        "kN": lambda x: x*1000,
+        "MN": lambda x: x*1E6,
+        "lbf": lambda x: x*4.44822,
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "mN": lambda x: x*1000,
+        "dN": lambda x: x*10,
+        "kN": lambda x: x/1000,
+        "MN": lambda x: x/1E6,
+        "lbf": lambda x: x/4.44822
+    }
+    def __init__(self,value:float, unit: ForceUnits,
+                exponent: int = 1):
+        if unit not in ForceUnits:
+            raise TypeError(f"The unit of {unit} is not valid for force")
+        super().__init__(value, unit, exponent)
 
         
 
