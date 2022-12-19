@@ -1,10 +1,18 @@
 from itertools import chain, combinations
+from threading import local
 from typing import Callable, List, Literal
-from inspect import signature
+from inspect import getfullargspec
 from functools import wraps
+from pprint import pprint
 
 # to get around circular import 
 import cheme_calculations.units as u
+
+class UnsolvableEquation(Exception):
+    pass
+
+class SolutionNotSupported(Exception):
+    pass
 
 
 __all__ = ["powerset", "getR_constant", "to_sup", "remove_zero", "solvable_for"]
@@ -19,9 +27,34 @@ def solvable_for(solvable: List[str]):
     def inner(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            sig = signature(func)
-            print(solvable)
-            a = func(*args, **kwargs)
+            
+            arg_names = getfullargspec(func).args
+            
+            arg_dict = {k:v for k,v in zip(arg_names, args)}
+            
+            # check if default solve was given a value
+            default_given = 0
+            if len(args) == len(arg_names):
+                default_given = 1
+            
+            # check for improper None's
+            for k, v in arg_dict.items():
+                if k not in solvable and v == None:
+                    raise SolutionNotSupported(f"Solving for {k} is not supported")
+            
+            # check for proper amount of None's 
+            if (args.count(None) + 1 - default_given) > 1:
+                raise UnsolvableEquation("Please supply more known parameters")
+            
+            # get thing were solving for 
+            # initial set to default
+            solving_for = arg_names[-1]
+            for k, v in arg_dict.items():
+                if v == None:
+                    solving_for = k
+                    
+            
+            a = func(*args, **kwargs, solving_for=solving_for)
             return a
         
         return wrapper

@@ -2,7 +2,7 @@ from pprint import pprint
 from cheme_calculations.heat_transfer import condensation_transfer_coefficient, ThermalConductivity, HeatTransferCoefficient
 from cheme_calculations.heat_transfer.phase_changes import flux_max_boiling
 from cheme_calculations.heat_transfer.steady_state_conduction import planar_flux
-from cheme_calculations.heat_transfer.unit_types import Power
+from cheme_calculations.heat_transfer.unit_types import HeatFlux, Power
 from cheme_calculations.units import Temperature, Length, Time
 from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, Volume
 from cheme_calculations.units.units import BaseUnit, MultiUnit, Pressure
@@ -58,7 +58,7 @@ k = ThermalConductivity(0.6, "W/m*K")
 # mu = MultiUnit(3, "kg/m*s")
 # r = (rho*v*d)/mu
 
-ans = planar_flux(k, T1, T2, A, x)
+ans = planar_flux(k, T1, T2, None, HeatFlux(-2500, "W/m^2"))
 
 print(ans)
 
