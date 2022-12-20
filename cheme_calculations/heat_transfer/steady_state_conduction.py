@@ -14,6 +14,7 @@ def planar_heat(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[
     
     solving_for = kwargs["solving_for"]
     
+    
     if solving_for == "q":
         q = -k * A*((T2-T1)/thickness)
         return q

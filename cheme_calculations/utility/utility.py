@@ -1,5 +1,4 @@
 from itertools import chain, combinations
-from threading import local
 from typing import Callable, List, Literal
 from inspect import getfullargspec
 from functools import wraps
@@ -14,8 +13,11 @@ class UnsolvableEquation(Exception):
 class SolutionNotSupported(Exception):
     pass
 
+class OverSpecifiedProblem(Exception):
+    pass
 
-__all__ = ["powerset", "getR_constant", "to_sup", "remove_zero", "solvable_for"]
+
+__all__ = ["powerset", "getR_constant", "to_sup", "remove_zero", "solvable_for", "get_prefix"]
 
 # found here https://stackoverflow.com/questions/1482308/how-to-get-all-subsets-of-a-set-powerset
 def powerset(iterable):
@@ -46,12 +48,18 @@ def solvable_for(solvable: List[str]):
             if (args.count(None) + 1 - default_given) > 1:
                 raise UnsolvableEquation("Please supply more known parameters")
             
+            # check for over specification
+            if (args.count(None) + default_given) == 1:
+                raise OverSpecifiedProblem("There are too many parameters supplied to this function")
+            
             # get thing were solving for 
             # initial set to default
             solving_for = arg_names[-1]
             for k, v in arg_dict.items():
                 if v == None:
                     solving_for = k
+                    
+                
                     
             
             a = func(*args, **kwargs, solving_for=solving_for)
@@ -73,10 +81,10 @@ def remove_zero(x: float):
 
 
 def get_prefix(unit: str):
-    if len(unit) == 1:
-        return ""
+    if len(unit) == 1 or unit[0] not in ["m", "c", "d", "k", "M"]:
+        return ("", unit)
     else:
-        return unit[0]
+        return (unit[0], unit[1:])
         
 
 # found here https://stackoverflow.com/questions/13875507/convert-numeric-strings-to-superscript

@@ -10,7 +10,7 @@ from cheme_calculations.units.units import BaseUnit, MultiUnit, Pressure
 from cheme_calculations.process_safety import max_vessel_pressure
 
 
-k = ThermalConductivity(0.6, "W/m*K")
+k = ThermalConductivity(0.6, "kW/m*K")
 T1 = Temperature(10, 'K')
 T2 = Temperature(100, 'K')
 thickness = Length(.2, "m")
@@ -34,12 +34,12 @@ hvap = Hvap(2250000, "J/kg")
 
 
 mu = MultiUnit(0.0007563, "kg/m*s")
-k = ThermalConductivity(0.6, "W/m*K")
+k = ThermalConductivity(0.6, "kW/m*K")
 
 # ans = flux_max_boiling(hvap, Density(0.623, "kg/m^3"), Density(957.7, "kg/m^3"), 
 #                        MultiUnit(.058, "kg/s^2"), g)
 
-# ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
+ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 # mat_strength = Pressure(85000, "psi")
 # wall_thickness = Length(1.9E-3, "m")
@@ -58,7 +58,7 @@ k = ThermalConductivity(0.6, "W/m*K")
 # mu = MultiUnit(3, "kg/m*s")
 # r = (rho*v*d)/mu
 
-ans = planar_flux(k, T1, T2, None, HeatFlux(-2500, "W/m^2"))
+#ans = planar_flux(k, T1, T2, x)
 
 print(ans)
 

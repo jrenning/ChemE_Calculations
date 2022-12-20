@@ -2,7 +2,7 @@ from math import floor
 from typing import Literal, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
-from cheme_calculations.utility import to_sup
+from cheme_calculations.utility import to_sup, get_prefix
 from cheme_calculations.utility.utility import remove_zero
 
 
@@ -16,9 +16,21 @@ T = TypeVar('T')
 class UnitConversionError(Exception):
     pass
 
+class UnknownPrefix(Exception):
+    pass
+
 
 # milli. centi, deci, kilo, mega
 prefixes = ["m", "c", "d", "k", "M"]
+
+# factors relative to no prefix 
+prefix_factors = {
+    "m": .001,
+    "c": .01,
+    "d": .1,
+    "k": 1000,
+    "M": 1E6,
+}
 
 TemperateUnits = ["K", "C", "R", "F"]
 TemperatureDict = {k:"Temperature" for k in TemperateUnits}
@@ -72,6 +84,11 @@ DECONSTRUCTABLE_UNITS = {
     "J": "kg*m^2/s^2",
     "W": "J/s",
     "psi": "lbf/in^2",
+}
+
+UNIT_SIMPLIFICATIONS = {
+    "kg/s^3*K": "W/m^2*K",
+    "kg/s^3": "W/m^2",
 }
 
 
@@ -250,6 +267,17 @@ class BaseUnit:
         
 
 
+
+# only used when an equation uses alot of units and/or simplifying requires a non obvious step
+def do_common_simplifications(top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
+    for unit in UNIT_SIMPLIFICATIONS.keys():
+        convert_top_half, convert_bottom_half = MultiUnit.parse_units(unit)
+        
+        if convert_top_half == top_half and convert_bottom_half == bottom_half:
+            new_top_half, new_bottom_half = MultiUnit.parse_units(UNIT_SIMPLIFICATIONS[unit])
+            return new_top_half, new_bottom_half
+    
+    return top_half, bottom_half
     
 class MultiUnit:
     def __init__(self, value: float, unit: str="", *,  top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):
@@ -260,6 +288,42 @@ class MultiUnit:
         self._top_half = top_half
         self._bottom_half = bottom_half
         self._value = value
+    
+    
+    @staticmethod
+    def deconstruct_unit_prefixes(top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
+        # kg is special in that it is a prefixed unit that is the standard measurement
+        top_prefixes = [get_prefix(x._unit)[0] for x in top_half if x._unit != "kg"]
+        top_base_units = [BaseUnit(get_prefix(x._unit)[1], x._exponent) if x._unit != "kg" else BaseUnit("kg", x._exponent) for x in top_half]
+        bottom_prefixes = [get_prefix(x._unit)[0] for x in bottom_half if x._unit != "kg"]
+        bottom_base_units = [BaseUnit(get_prefix(x._unit)[1], x._exponent) if x._unit != "kg" else BaseUnit("kg", x._exponent) for x in bottom_half]
+        
+        factor = 1
+        
+        for prefix in top_prefixes:
+            # if not empty string
+            if prefix:
+                try:
+                    factor *= prefix_factors[prefix]
+                except:
+                    raise UnknownPrefix(f"The prefix of {prefix} is invalid")
+        
+        for prefix in bottom_prefixes:
+            # if not empty
+            if prefix:
+                try:
+                    # inverse for bottom prefixes
+                    factor *= (1/prefix_factors[prefix])
+                except:
+                    raise UnknownPrefix(f"The prefix of {prefix} is invalid")
+        
+        return top_base_units, bottom_base_units, factor
+                
+    
+    @staticmethod
+    def reconstruct_unit_prefixes(top_half: List[BaseUnit], bottom_half: List[BaseUnit], factor:int):
+        pass      
+
     
     @staticmethod   
     def cancel_units(top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
@@ -385,8 +449,8 @@ class MultiUnit:
         
         return top_list, bottom_list
     
-    def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit], fractional: bool=False):
-        
+    def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
+        # TODO improve algorithm to also have preference for units with less exponents
         matches_dict = defaultdict(lambda: 0)
         
         unit_match = True
@@ -506,6 +570,9 @@ class MultiUnit:
             
             # clear dict 
             matches_dict = {}
+        
+        # do final simplifications if possible
+        top_list, bottom_list = do_common_simplifications(top_list, bottom_list)
         
         return top_list, bottom_list
         
@@ -653,6 +720,8 @@ class MultiUnit:
                 new_top_half = deepcopy(self._top_half) + deepcopy(other._bottom_half)
                 new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._top_half)
                 
+                new_top_half, new_bottom_half, factor = self.deconstruct_unit_prefixes(new_top_half, new_bottom_half)
+                
                 new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
                 
                 new_bottom_half = self.combine_units(new_bottom_half)
@@ -674,7 +743,7 @@ class MultiUnit:
                 if len(final_top_half) == 0 and len(final_bottom_half) == 1:
                     return Unit(self._value / other._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
                 
-                return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
+                return MultiUnit((self._value / other._value)*factor, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
             new_top_half = deepcopy(self._top_half)
             new_bottom_half = deepcopy(self._bottom_half) + [BaseUnit(other._unit, other._exponent)]
@@ -713,16 +782,20 @@ class MultiUnit:
             new_top_half = deepcopy(self._top_half) + deepcopy(other._top_half)
             new_bottom_half = deepcopy(self._bottom_half) + deepcopy(other._bottom_half)
             
+            new_top_half, new_bottom_half, factor = self.deconstruct_unit_prefixes(new_top_half, new_bottom_half)
+            
             new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
             
             new_top_half = self.combine_units(new_top_half)
             new_bottom_half = self.combine_units(new_bottom_half)
+            
+
         
             final_top_half, final_bottom_half = self.cancel_units(new_top_half, new_bottom_half)
             
             final_top_half, final_bottom_half = self.simplify_units(final_top_half, final_bottom_half)
             
-            return MultiUnit(self._value * other._value, top_half=final_top_half, bottom_half=final_bottom_half)
+            return MultiUnit((self._value * other._value)*factor, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
             new_top_half = deepcopy(self._top_half) + [BaseUnit(other._unit, other._exponent)]
             new_bottom_half = deepcopy(self._bottom_half)
