@@ -644,6 +644,12 @@ class MultiUnit:
         if convert_top == new_top_half and convert_bottom == new_bottom_half:
             return self 
         
+        
+        # flow diagram for converting units
+        # english -> SI -> base units -> SI -> english
+        # first convert self unit to base units 
+        
+        
         # check that bases are the same ie each has one length over one mass 
         new_unit_dict = defaultdict(lambda: 0)
         self_unit_dict = defaultdict(lambda: 0)
