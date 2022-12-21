@@ -6,13 +6,14 @@ from pytest import approx
 
 @pytest.mark.parametrize("unit1,unit2,expected", [(Velocity(3, 'm/s'),"cm/s",Velocity(300.0, 'cm/s')),
                                                         (DynamicViscosity(1, 'cP'), "kg/s*m", DynamicViscosity(1/1000, 'kg/m*s')),
-                                                        (MultiUnit(5, "m^3"), "cm^3", MultiUnit(5E6, "cm^3")),
+                                                        (MultiUnit(5, "m^3"), "cm^3", MultiUnit(approx(5E6), "cm^3")),
                                                         (MultiUnit(1, "W/m^2*K"), "BTU/hr*ft^2*F", MultiUnit(approx(.17611), "BTU/hr*ft^2*F")),
                                                         (MultiUnit(1, "g/cm*s"), "kg/m*s", MultiUnit(.1, "kg/m*s")),
                                                         (MultiUnit(1, "W/m*K"), "BTU/hr*ft*F", MultiUnit(approx(0.5777892), "BTU/hr*ft*F")),
                                                         (Density(1, "g/cm^3"), "kg/m^3", Density(approx(1000.0), "kg/m^3")),
                                                         (DynamicViscosity(1, "g/cm*s"), "kg/s*m", DynamicViscosity(approx(.1), "kg/s*m")),
-                                                        (MultiUnit(1000, "L/s"), "m^3/s", MultiUnit(1, "m^3/s"))
+                                                        (MultiUnit(1000, "L/s"), "m^3/s", MultiUnit(approx(1), "m^3/s")),
+                                                        (MultiUnit(1, "L/s"), "cm^3/s", MultiUnit(approx(1000), "cm^3/s"))
                                                         ])
 def test_multi_unit_conversion(unit1, unit2, expected):
     a = unit1.convert_to(unit2)
@@ -42,13 +43,13 @@ def test_temperature_conversions(unit1, unit2, expected):
 @pytest.mark.parametrize("unit1,unit2,expected", [(Pressure(1, "atm"), "Pa", Pressure(101325, "Pa")),
                                                   (Pressure(1, "atm"), "bar", Pressure(1.01325, "bar")),
                                                   (Pressure(1, "atm"), "kPa", Pressure(101.325, "kPa")),
-                                                  (Pressure(1, "atm"), "mmHg", Pressure(760, "mmHg")),
-                                                  (Pressure(1, "atm"), "psi", Pressure(14.696, "psi")),
+                                                  (Pressure(1, "atm"), "mmHg", Pressure(approx(760.002), "mmHg")),
+                                                  (Pressure(1, "atm"), "psi", Pressure(approx(14.69594), "psi")),
                                                   (Pressure(101325, "Pa"), "atm", Pressure(1, "atm")),
                                                   (Pressure(101.325, "kPa"), "atm", Pressure(1, "atm")),
                                                   (Pressure(1.01325, "bar"), "atm", Pressure(approx(1), "atm")),
-                                                  (Pressure(760, "mmHg"), "atm", Pressure(1, "atm")),
-                                                  (Pressure(14.696, "psi"), "atm", Pressure(1, "atm")),
+                                                  (Pressure(760, "mmHg"), "atm", Pressure(approx(1, rel=1E-3), "atm")),
+                                                  (Pressure(14.696, "psi"), "atm", Pressure(approx(1, rel=1E-3), "atm")),
                                                   ])
 def test_pressure_conversions(unit1, unit2, expected):
     a = unit1.convert_to(unit2)

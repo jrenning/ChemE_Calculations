@@ -60,9 +60,8 @@ ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 #ans = planar_flux(k, T1, T2, x)
 
-m = Density(1, "g/cm^3")
-m2 = m.convert_to("kg/m^3")
-print(m2)
+m = MultiUnit(5, "m/s")
+m2 = m.convert_to("cm/s")
 
 
 

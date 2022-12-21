@@ -98,6 +98,7 @@ UNIT_SIMPLIFICATIONS = {
     "kg/s^3": "W/m^2",
 }
 
+UNIT_COMPOSITES = ["L"]
 
 
  
@@ -221,25 +222,32 @@ class Unit:
         :return: Returns a unit of the same class as self withe new value and unit
         :rtype: self.type
         """
-        if "^" in unit:
+        if "^" in unit and self._unit not in UNIT_COMPOSITES:
             unit, exponent = unit.split("^")
+            exponent = float(exponent)
+            return_unit = unit
+        elif self._unit in UNIT_COMPOSITES:
+            unit = unit
+            return_unit, exponent = unit.split("^")
             exponent = float(exponent)
         else:
             unit = unit
+            return_unit = unit
             exponent = 1
+
         if (self._unit == unit):
             return self
         if (unit == self.standard):     
 
             val = self.to_standard_conversions[self._unit](self._value)**exponent
             if inplace:
-                return self.__class__.__init__(self, val, unit, exponent)
-            return self.__class__(val, unit, exponent)
+                return self.__class__.__init__(self, val, return_unit, exponent)
+            return self.__class__(val, return_unit, exponent)
         elif (self._unit == self.standard):
             val = self.from_standard_conversions[unit](self._value)**exponent
             if inplace:
-                return self.__class__.__init__(self, val, unit, exponent)
-            return self.__class__(val, unit, exponent)
+                return self.__class__.__init__(self, val, return_unit, exponent)
+            return self.__class__(val, return_unit, exponent)
         else:
             try:
                 standard_val = self.to_standard_conversions[self._unit](self._value)**exponent
@@ -249,8 +257,8 @@ class Unit:
 
             val = self.from_standard_conversions[unit](standard_val)**exponent
             if inplace:
-                return self.__class__.__init__(self, val, unit, exponent)
-            return self.__class__(val, unit, exponent)
+                return self.__class__.__init__(self, val, return_unit, exponent)
+            return self.__class__(val, return_unit, exponent)
 
 # basic class of unit without a value attached, used for constructing multi units by hand 
 class BaseUnit:
@@ -421,8 +429,6 @@ class MultiUnit:
     
     def deconstruct_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit], 
                           one_pass: bool = False):
-        new_top_list = []
-        new_bottom_list = []
         
         top_list = deepcopy(top_list)
         bottom_list = deepcopy(bottom_list)
@@ -628,89 +634,94 @@ class MultiUnit:
             exponent_total += u2._exponent
             
         return exponent_total
-            
+    
+    def base_to_unit(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]) -> List[Unit]:
+        top_list = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in top_list]
+        bottom_list = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in bottom_list]
+        
+        return top_list, bottom_list
+        
+    def convert_and_get_factor(self, unit: Unit):
+        # temperature conversion works different in a multi unit
+        if unit._unit in ["K", "C"]:
+            unit._value *= (1*unit._exponent)
+        elif unit._unit in ["R", "F"]:
+            unit._value *= ((5/9)*unit._exponent)
+        else:
+            if unit._exponent == 1:
+                unit.convert_to(unit.standard, True)
+            else:
+                unit.convert_to(f"{unit.standard}^{unit._exponent}", True)
+        return unit
+        
+      
     def convert_to(self, unit: str, inplace: bool =False):       
         convert_top, convert_bottom = self.parse_units(unit)
-        convert_top = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in convert_top]
-        convert_bottom = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in convert_bottom]
+                # deconstruct with one pass first to get rid of things like W
+        convert_top, convert_bottom = self.deconstruct_units(convert_top, convert_bottom, one_pass=True)
+        convert_top, convert_bottom = self.base_to_unit(convert_top, convert_bottom)
         
         # get top and bottom half of self 
-        new_top_half, new_bottom_half = self.deconstruct_units(self._top_half, self._bottom_half, True)
-        new_top_half = [self.get_unit_class(x._unit)(1, x._unit, x._exponent) for x in new_top_half]
-        new_bottom_half = [self.get_unit_class(x._unit)(1,x._unit, x._exponent) for x in new_bottom_half]
+        # deconstruct with one pass first to get rid of things like W
+        new_top_half, new_bottom_half = self.deconstruct_units(deepcopy(self._top_half), deepcopy(self._bottom_half), one_pass=True)
+        new_top_half, new_bottom_half = self.base_to_unit(new_top_half, new_bottom_half)
         
         
         # if converting to the same unit return
         if convert_top == new_top_half and convert_bottom == new_bottom_half:
             return self 
-        
-        
+
         # flow diagram for converting units
         # english -> SI -> base units -> SI -> english
+
         # first convert self unit to base units 
+        left_factor = 1
+        for u1 in new_top_half:
+            u1 = self.convert_and_get_factor(u1)
+            left_factor *= u1._value
+        for u1 in new_bottom_half:
+            # temperature conversion works different in a multi unit
+            u1 = self.convert_and_get_factor(u1)
+            left_factor *= 1/u1._value
         
+        # now deconstruct to base units 
+        new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
+        new_top_half, new_bottom_half = self.base_to_unit(new_top_half, new_bottom_half)
         
-        # check that bases are the same ie each has one length over one mass 
+        # do the same steps to the right side 
+        
+        right_factor = 1
+        for u1 in convert_top:
+            u1 = self.convert_and_get_factor(u1)
+            right_factor *= u1._value
+        for u1 in convert_bottom:
+            u1 = self.convert_and_get_factor(u1)
+            right_factor *= 1/(u1._value)
+            
+        convert_top, convert_bottom = self.deconstruct_units(convert_top, convert_bottom)
+        convert_top, convert_bottom = self.base_to_unit(convert_top, convert_bottom)
+        
+        # now tally up and make sure the sides are the same 
+
         new_unit_dict = defaultdict(lambda: 0)
         self_unit_dict = defaultdict(lambda: 0)
         
         for u1 in convert_top:
             new_unit_dict[str(self.get_unit_class(u1._unit))] += 1*u1._exponent
         for u2 in convert_bottom:
-            new_unit_dict[str(self.get_unit_class(u2._unit))] += 1*u2._exponent
+            new_unit_dict[str(self.get_unit_class(u2._unit))] += -1*u2._exponent
         for u1 in new_top_half:
             self_unit_dict[str(self.get_unit_class(u1._unit))] += 1*u1._exponent
         for u2 in new_bottom_half:
-            self_unit_dict[str(self.get_unit_class(u2._unit))] += 1*u2._exponent
+            self_unit_dict[str(self.get_unit_class(u2._unit))] += -1*u2._exponent
             
         if new_unit_dict != self_unit_dict:
             raise UnitConversionError(f"The conversion from {self.__repr__()} to {unit} is not allowed")
         
-        top_factor = 1
-        bottom_factor = 1
-        for u1 in new_top_half:
-            for u2 in convert_top:
-                if u1.__class__ == u2.__class__:
-                    # temperature conversion works different in a multi unit
-                    if u1._unit in ["K", "C"] and u2._unit in ["K", "C"]:
-                        top_factor *= 1
-                    elif u1._unit in ["F", "R"] and u2._unit in ["F", "R"]:
-                        top_factor *= 1
-                    elif u1._unit in ["K", "C"] and u2._unit in ["F", "R"]:
-                        top_factor *= (1.8*u1._exponent)
-                    elif u1._unit in ["R", "F"] and u2._unit in ["K", "C"]:
-                        top_factor *= ((5/9)*u1._exponent)
-                    else:
-                        if u2._exponent == 1:
-                            u3 = u1.convert_to(f"{u2._unit}")
-                        else:
-                            u3 = u1.convert_to(f"{u2._unit}^{u2._exponent}")
-                        top_factor *= (u3._value)
-        
-        for u1 in new_bottom_half:
-            for u2 in convert_bottom:
-                if u1.__class__ == u2.__class__:
-                    # temperature conversion works different in a multi unit
-                    if u1._unit in ["K", "C"] and u2._unit in ["K", "C"]:
-                        bottom_factor *= 1
-                    elif u1._unit in ["F", "R"] and u2._unit in ["F", "R"]:
-                        bottom_factor *= 1
-                    elif u1._unit in ["K", "C"] and u2._unit in ["F", "R"]:
-                        bottom_factor *= (1.8*u1._exponent)
-                    elif u1._unit in ["R", "F"] and u2._unit in ["K", "C"]:
-                        bottom_factor *= ((5/9)*u1._exponent)
-                    else:
-                        if u2._exponent == 1:
-                            u3 = u1.convert_to(f"{u2._unit}")
-                        else:
-                            u3 = u1.convert_to(f"{u2._unit}^{u2._exponent}")
-                        bottom_factor *= (u3._value)
-            
-        
         if inplace:
-            return self.__class__.__init__(self,self._value*(top_factor/bottom_factor), unit)
+            return self.__class__.__init__(self,self._value*(left_factor/right_factor), unit)
         else:
-            return self.__class__(self._value*(top_factor/bottom_factor), unit)
+            return self.__class__(self._value*(left_factor/right_factor), unit)
         
     def __repr__(self):
         try:
@@ -975,28 +986,28 @@ class Temperature(Unit):
         super().__init__(value, unit, exponent)
         
 class Pressure(Unit):
-    standard: str = "atm"
+    standard: str = "Pa"
     # from target unit to standard unit 
     to_standard_conversions = {
-        "mPa": lambda x: (x/1000) / 101325,
-        "dPa": lambda x: (x/10) / 101325,
-        "Pa": lambda x: x / 101325,
-        "kPa": lambda x: (x*1000) / 101325,
-        "MPa": lambda x: (x*10E6) / 101325,
-        "bar": lambda x: x*0.986923,
-        "mmHg": lambda x: x/760,
-        "psi": lambda x: x/14.696,
+        "mPa": lambda x: (x/1000),
+        "dPa": lambda x: (x/10),
+        "kPa": lambda x: (x*1000),
+        "MPa": lambda x: (x*10E6),
+        "bar": lambda x: x*100000,
+        "atm": lambda x: x*101325,
+        "mmHg": lambda x: x*133.322,
+        "psi": lambda x: x*6894.76,
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
-        "mPa": lambda x: (x*1000) * 101325,
-        "dPa": lambda x: (x*10) * 101325,
-        "Pa": lambda x: x*101325,
-        "kPa": lambda x: (x/1000) * 101325,
-        "MPa": lambda x: (x/10E6) * 101325,
-        "bar": lambda x: x*1.01325,
-        "mmHg": lambda x: x * 760,
-        "psi": lambda x: x*14.696,
+        "mPa": lambda x: (x*1000),
+        "dPa": lambda x: (x*10),
+        "kPa": lambda x: (x/1000),
+        "MPa": lambda x: (x/10E6),
+        "bar": lambda x: x/100000,
+        "atm": lambda x: x/101325,
+        "mmHg": lambda x: x/133.322,
+        "psi": lambda x: x/6894.76,
     }
     def __init__(self, value:float, unit: PressureUnits="atm",
                  exponent: int = 1):
@@ -1129,23 +1140,25 @@ class Force(Unit):
 class Volume(Unit):
     standard: str = "m^3"
     # from target unit to standard unit 
+    # cube applied to unit value in convert function
+    # ie actual L conversion is by a factor of 10 * 10 * 10
     to_standard_conversions = {
-        "L": lambda x: x/1000,
-        "mm^3": lambda x: x/(1000*1000*1000),
-        "cm^3": lambda x: x/(100*100*100),
-        "dm^3": lambda x: x/(10*10*10),
-        "km^3": lambda x: x*(1000*1000*1000),
-        "ft^3": lambda x: x*0.0283168,
+        "L": lambda x: x/10,
+        "mm^3": lambda x: x/(1000),
+        "cm^3": lambda x: x/(100),
+        "dm^3": lambda x: x/(10),
+        "km^3": lambda x: x*(1000),
+        "ft^3": lambda x: x*0.3048,
         "gal": lambda x: x*0.00454609,
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
-        "L": lambda x: x*1000,
-        "mm^3": lambda x: x*(1000*1000*1000),
-        "cm^3": lambda x: x*(100*100*100),
-        "dm^3": lambda x: x*(10*10*10),
-        "km^3": lambda x: x/(1000*1000*1000),
-        "ft^3": lambda x: x/0.0283168,
+        "L": lambda x: x*10,
+        "mm^3": lambda x: x*(1000),
+        "cm^3": lambda x: x*(100),
+        "dm^3": lambda x: x*(10),
+        "km^3": lambda x: x/(1000),
+        "ft^3": lambda x: x/0.3048,
         "gal": lambda x: x/0.00454609,
     }
     def __init__(self, value: float, unit: str, exponent: int = 1):
