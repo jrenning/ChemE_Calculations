@@ -9,7 +9,7 @@ from cheme_calculations.utility.utility import remove_zero
 
 
 __all__ = ["Unit", "MultiUnit", "BaseUnit", "Temperature", "Pressure", 
-           "Mass", "Current", "Energy", "Time", "Length", "UNIT_REGISTRY"]
+           "Mass", "Current", "Energy", "Time", "Length","Volume",  "UNIT_REGISTRY"]
 
 T = TypeVar('T')
 
@@ -64,8 +64,12 @@ PressureDict = {k: "Pressure" for k in PressureUnits}
 ForceUnits = ["N"]
 ForceUnits = [f"{x}{y}" for x in prefixes for y in ForceUnits]
 ForceUnits.extend(["N", "lbf"])
+ForceDict = {k: "Force" for k in ForceUnits}
 
-
+VolumeUnits = ["m^3"]
+VolumeUnits = [f"{x}{y}" for x in prefixes for y in VolumeUnits]
+VolumeUnits.extend(["m^3", "ft^3", "L", "in^3"])
+VolumeDict = {k: "Volume" for k in VolumeUnits}
 # registers units to type of unit it is 
 UNIT_REGISTRY = {
     **TemperatureDict,
@@ -75,6 +79,8 @@ UNIT_REGISTRY = {
     **TimeDict,
     **EnergyDict,
     **PressureDict,
+    **ForceDict,
+    **VolumeDict,
 }
 
 LengthUnit = Literal["m", "ft"]
@@ -84,6 +90,7 @@ DECONSTRUCTABLE_UNITS = {
     "J": "kg*m^2/s^2",
     "W": "J/s",
     "psi": "lbf/in^2",
+    "cP": "g/m*s"
 }
 
 UNIT_SIMPLIFICATIONS = {
@@ -214,28 +221,36 @@ class Unit:
         :return: Returns a unit of the same class as self withe new value and unit
         :rtype: self.type
         """
+        if "^" in unit:
+            unit, exponent = unit.split("^")
+            exponent = float(exponent)
+        else:
+            unit = unit
+            exponent = 1
         if (self._unit == unit):
             return self
-        if (unit == self.standard):
-            val = self.to_standard_conversions[self._unit](self._value)**self._exponent
+        if (unit == self.standard):     
+
+            val = self.to_standard_conversions[self._unit](self._value)**exponent
             if inplace:
-                return self.__class__.__init__(self, val, unit, self._exponent)
-            return self.__class__(val, unit, self._exponent)
+                return self.__class__.__init__(self, val, unit, exponent)
+            return self.__class__(val, unit, exponent)
         elif (self._unit == self.standard):
-            val = self.from_standard_conversions[unit](self._value)**self._exponent
+            val = self.from_standard_conversions[unit](self._value)**exponent
             if inplace:
-                return self.__class__.__init__(self, val, unit, self._exponent)
-            return self.__class__(val, unit, self._exponent)
+                return self.__class__.__init__(self, val, unit, exponent)
+            return self.__class__(val, unit, exponent)
         else:
             try:
-                standard_val = self.to_standard_conversions[self._unit](self._value)**self._exponent
+                standard_val = self.to_standard_conversions[self._unit](self._value)**exponent
             except KeyError as _:
                 raise UnitConversionError(f"{self._unit} can not be converted to {unit}")
                 
-            val = self.from_standard_conversions[unit](standard_val)**self._exponent
+
+            val = self.from_standard_conversions[unit](standard_val)**exponent
             if inplace:
-                return self.__class__.__init__(self, val, unit, self._exponent)
-            return self.__class__(val, unit, self._exponent)
+                return self.__class__.__init__(self, val, unit, exponent)
+            return self.__class__(val, unit, exponent)
 
 # basic class of unit without a value attached, used for constructing multi units by hand 
 class BaseUnit:
@@ -257,6 +272,7 @@ class BaseUnit:
         return False
     def __hash__(self):
         return hash(str(self))
+    
     
     def __pow__(self, other):
         if isinstance(other, Union[int, float]):
@@ -457,9 +473,7 @@ class MultiUnit:
         while unit_match:
         
             for destructable_unit in DECONSTRUCTABLE_UNITS.values():
-                
-                
-                
+
                 top_base_units, bottom_base_units = self.parse_units(destructable_unit)
                 # make a copy to standardize
                 standard_base_top = deepcopy(top_base_units)
@@ -598,8 +612,22 @@ class MultiUnit:
                 return Energy
             case "Pressure":
                 return Pressure
+            case "Force":
+                return Force
+            case "Volume":
+                return Volume
             case _:
                 raise KeyError(f"UNIT REGISTRY is improperly formatted")
+        
+        
+    def get_exponent_total(self)-> float:
+        exponent_total = 0
+        for u1 in self._top_half:
+            exponent_total += u1._exponent
+        for u2 in self._bottom_half:
+            exponent_total += u2._exponent
+            
+        return exponent_total
             
     def convert_to(self, unit: str, inplace: bool =False):       
         convert_top, convert_bottom = self.parse_units(unit)
@@ -647,7 +675,10 @@ class MultiUnit:
                     elif u1._unit in ["R", "F"] and u2._unit in ["K", "C"]:
                         top_factor *= ((5/9)*u1._exponent)
                     else:
-                        u3 = u1.convert_to(u2._unit)
+                        if u2._exponent == 1:
+                            u3 = u1.convert_to(f"{u2._unit}")
+                        else:
+                            u3 = u1.convert_to(f"{u2._unit}^{u2._exponent}")
                         top_factor *= (u3._value)
         
         for u1 in new_bottom_half:
@@ -663,7 +694,10 @@ class MultiUnit:
                     elif u1._unit in ["R", "F"] and u2._unit in ["K", "C"]:
                         bottom_factor *= ((5/9)*u1._exponent)
                     else:
-                        u3 = u1.convert_to(u2._unit)
+                        if u2._exponent == 1:
+                            u3 = u1.convert_to(f"{u2._unit}")
+                        else:
+                            u3 = u1.convert_to(f"{u2._unit}^{u2._exponent}")
                         bottom_factor *= (u3._value)
             
         
@@ -748,6 +782,8 @@ class MultiUnit:
             new_top_half = deepcopy(self._top_half)
             new_bottom_half = deepcopy(self._bottom_half) + [BaseUnit(other._unit, other._exponent)]
             
+            new_top_half, new_bottom_half, factor = self.deconstruct_unit_prefixes(new_top_half, new_bottom_half)
+            
             new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
             
             new_bottom_half = self.combine_units(new_bottom_half)
@@ -800,6 +836,8 @@ class MultiUnit:
             new_top_half = deepcopy(self._top_half) + [BaseUnit(other._unit, other._exponent)]
             new_bottom_half = deepcopy(self._bottom_half)
             
+            new_top_half, new_bottom_half, factor = self.deconstruct_unit_prefixes(new_top_half, new_bottom_half)
+            
             new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
             
             new_top_half = self.combine_units(new_top_half)
@@ -835,6 +873,8 @@ class MultiUnit:
             # swap halfs 
             new_top_half, new_bottom_half = new_bottom_half, new_top_half
             
+            new_top_half, new_bottom_half, factor = self.deconstruct_unit_prefixes(new_top_half, new_bottom_half)
+            
             # deconstruct units
             new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
             
@@ -866,6 +906,8 @@ class MultiUnit:
         elif other.__class__ == Unit or other.__class__.__bases__[0] == Unit:
             new_top_half = deepcopy(self._top_half) + [BaseUnit(other._unit, other._exponent)]
             new_bottom_half = deepcopy(self._bottom_half)
+            
+            new_top_half, new_bottom_half, factor = self.deconstruct_unit_prefixes(new_top_half, new_bottom_half)
             
             new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half)
             
@@ -1078,7 +1120,33 @@ class Force(Unit):
         super().__init__(value, unit, exponent)
 
         
-
+class Volume(Unit):
+    standard: str = "m^3"
+    # from target unit to standard unit 
+    to_standard_conversions = {
+        "L": lambda x: x/1000,
+        "mm^3": lambda x: x/(1000*1000*1000),
+        "cm^3": lambda x: x/(100*100*100),
+        "dm^3": lambda x: x/(10*10*10),
+        "km^3": lambda x: x*(1000*1000*1000),
+        "ft^3": lambda x: x*0.0283168,
+        "gal": lambda x: x*0.00454609,
+    }
+    # form standard unit to the target unit 
+    from_standard_conversions = {
+        "L": lambda x: x*1000,
+        "mm^3": lambda x: x*(1000*1000*1000),
+        "cm^3": lambda x: x*(100*100*100),
+        "dm^3": lambda x: x*(10*10*10),
+        "km^3": lambda x: x/(1000*1000*1000),
+        "ft^3": lambda x: x/0.0283168,
+        "gal": lambda x: x/0.00454609,
+    }
+    def __init__(self, value: float, unit: str, exponent: int = 1):
+        if unit == "L":
+            super().__init__(value, unit, exponent)
+        else:
+            super().__init__(value, unit, exponent)
     
         
         

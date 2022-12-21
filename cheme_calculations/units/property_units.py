@@ -6,10 +6,7 @@ class Area(Unit):
         unit, _ = unit.split("^")
         super().__init__(value, unit, 2)
         
-class Volume(Unit):
-    def __init__(self, value: float, unit: str):
-        unit, _ = unit.split("^")
-        super().__init__(value, unit, 3)
+
 
 
 class Velocity(MultiUnit):
@@ -27,11 +24,7 @@ class Gravity(MultiUnit):
 
 class DynamicViscosity(MultiUnit):
     def __init__(self, value, unit=Literal["cP", "kg/m*s", "cm/m*s"]):
-        if unit == "cP":
-            unit_string = "kg/m*s"
-            super().__init__(value/1000,unit_string)
-        else:
-            super().__init__(value, unit)
+        super().__init__(value, unit)
 
     
 

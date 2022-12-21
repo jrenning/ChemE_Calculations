@@ -1,6 +1,6 @@
 from cheme_calculations.units import Temperature
 from cheme_calculations.units.property_units import Density, DynamicViscosity, Velocity
-from cheme_calculations.units.units import MultiUnit, Pressure, Unit
+from cheme_calculations.units.units import MultiUnit, Pressure, Unit, Volume
 import pytest
 from pytest import approx
 
@@ -10,11 +10,12 @@ from pytest import approx
                                                         (MultiUnit(1, "W/m^2*K"), "BTU/hr*ft^2*F", MultiUnit(approx(.17611), "BTU/hr*ft^2*F")),
                                                         (MultiUnit(1, "g/cm*s"), "kg/m*s", MultiUnit(.1, "kg/m*s")),
                                                         (MultiUnit(1, "W/m*K"), "BTU/hr*ft*F", MultiUnit(approx(0.5777892), "BTU/hr*ft*F")),
-                                                        (Density(1, "g/cm^3"), "kg/m^3", Density(approx(1000.0), "kg/m^3"))
+                                                        (Density(1, "g/cm^3"), "kg/m^3", Density(approx(1000.0), "kg/m^3")),
+                                                        (DynamicViscosity(1, "g/cm*s"), "kg/s*m", DynamicViscosity(approx(.1), "kg/s*m")),
                                                         ])
 def test_multi_unit_conversion(unit1, unit2, expected):
     a = unit1.convert_to(unit2)
-    print(a)
+    print(a.__class__)
     print(expected)
     assert(a == expected)
     
@@ -30,8 +31,8 @@ def test_multi_unit_conversion(unit1, unit2, expected):
                                                         (Temperature(350, "R"), "C", Temperature(approx(-78.7056), "C")),
                                                         (Temperature(350, "R"), "F", Temperature(approx(-109.67), "F")),
                                                         (Temperature(350, "R"), "K", Temperature(approx(194.444, rel=1E-3), "K")),
-                                                        (Temperature(350, "K", 2), "K", Temperature(350, "K", 2)),
-                                                        (Temperature(275.15, "K", 2), "C", Temperature(4.0, "C", 2))
+                                                        (Temperature(350, "K", 2), "K^2", Temperature(350, "K", 2)),
+                                                        (Temperature(275.15, "K", 2), "C^2", Temperature(4.0, "C", 2))
                                                         ])
 def test_temperature_conversions(unit1, unit2, expected):
     a = unit1.convert_to(unit2)
