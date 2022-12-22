@@ -39,4 +39,11 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
+html_sidebars = {
+    '**': [
+        'cheme_calculations.heat_transfer.html',
+        'cheme_calculations.units.html'
+    ]
+}
+
 
