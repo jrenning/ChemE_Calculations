@@ -7,6 +7,8 @@ from cheme_calculations.units import Temperature, Length, Time
 from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, Velocity 
 from cheme_calculations.units.units import BaseUnit, Mass, MultiUnit, Pressure, Volume
 
+from cheme_calculations.thermodynamics.cubic_equations import peng_robinson, rendlich_kwong, soave_rendlich_kwong, van_der_waals
+
 from cheme_calculations.process_safety import max_vessel_pressure
 
 
@@ -60,8 +62,13 @@ ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 #ans = planar_flux(k, T1, T2, x)
 
-m = MultiUnit(5, "m/s")
-m2 = m.convert_to("cm/s")
+T = Temperature(350, "K")
+Tcrit = Temperature(350, "K")
+P = Pressure(350, "kPa")
+Pcrit = Pressure(350, "kPa")
+z = peng_robinson(T, P, Tcrit, Pcrit,"vapor", 0.224, 6)
+
+print(z)
 
 
 

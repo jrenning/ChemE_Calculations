@@ -1,4 +1,5 @@
 
+from typing import Literal
 from cheme_calculations.units import Temperature, Pressure
 
 
@@ -9,18 +10,35 @@ __all__ = ["rendlich_kwong", "van_der_waals", "soave_rendlich_kwong",
 
 def rendlich_kwong(temperature: Temperature, pressure: Pressure,
                    Tcrit: Temperature, Pcrit: Pressure,
-                   state: str, iterations: int):
+                   state: Literal["vapor", "liquid"], iterations: int)-> float:
+        """Calculates the Z correction factor based on the Rendlich-Kwong equation of state
+
+        :param temperature: The temperature of the material
+        :type temperature: class: Temperature
+        :param pressure: The pressure of the material
+        :type pressure: class: Pressure
+        :param Tcrit: The critical temperature of the given material
+        :type Tcrit: class: Temperature
+        :param Pcrit: The critical pressure of the given material
+        :type Pcrit: class: Pressure
+        :param state: state of the material
+        :type state: Literal["vapor", "liquid"]
+        :param iterations: Number of iterations used to find the solution
+        :type iterations: int
+        :return: The correction factor Z
+        :rtype: float
+        
+        :Example:
+        
+        >>> T = Temperature(350, "K)
+        >>> Tcrit = Temperature(350, "K")
+        >>> P = Pressure(350, "kPa")
+        >>> Pcrit = Pressure(350, "kPa")
+        >>> z = rendlich_kwong(T, P, Tcrit, Pcrit,"vapor", 6)
+        >>> 0.47750
+        
         """
-        Takes in the starting temperature and pressure
-        along with the critical temperature and pressure
-        to calculate the Z value for the RK EOS based on
-        the given state.\n
-        T = initial temperature of component\n
-        P = initial pressure of component\n
-        Tcrit = critical temperature of component\n
-        Pcrit = critical pressure of component\n
-        state = liquid or vapor 
-        """
+        
         p_reduced = pressure/Pcrit
         t_reduced = temperature/Tcrit
 
@@ -51,17 +69,37 @@ def rendlich_kwong(temperature: Temperature, pressure: Pressure,
 
 def van_der_waals(temperature: Temperature, pressure: Pressure,
                    Tcrit: Temperature, Pcrit: Pressure,
-                   state: str, iterations: int):
+                   state: Literal["vapor", "liquid"], iterations: int)-> float:
     """
     Takes in the starting temperature and pressure
     along with the critical temperature and pressure
     to calculate the Z value for the Van Der Waals EOS based on
-    the given state.\n
-    T = initial temperature of component\n
-    P = initial pressure of component\n
-    Tcrit = critical temperature of component\n
-    Pcrit = critical pressure of component\n
-    state = liquid or vapor 
+    the given state.
+    
+    :param temperature: The temperature of the material
+    :type temperature: class: Temperature
+    :param pressure: The pressure of the material
+    :type pressure: class: Pressure
+    :param Tcrit: The critical temperature of the given material
+    :type Tcrit: class: Temperature
+    :param Pcrit: The critical pressure of the given material
+    :type Pcrit: class: Pressure
+    :param state: state of the material
+    :type state: Literal["vapor", "liquid"]
+    :param iterations: Number of iterations used to find the solution
+    :type iterations: int
+    :return: The correction factor Z
+    :rtype: float
+    
+    :Example:
+    
+    >>> T = Temperature(350, "K)
+    >>> Tcrit = Temperature(350, "K")
+    >>> P = Pressure(350, "kPa")
+    >>> Pcrit = Pressure(350, "kPa")
+    >>> z = van_der_waals(T, P, Tcrit, Pcrit,"vapor", 6)
+    >>> 0.70816
+    
     """
     
     p_reduced = pressure/Pcrit
@@ -92,17 +130,38 @@ def van_der_waals(temperature: Temperature, pressure: Pressure,
 
 def soave_rendlich_kwong(temperature: Temperature, pressure: Pressure,
                    Tcrit: Temperature, Pcrit: Pressure,
-                   state: str, omega_lower: float, iterations: int):
+                   state: Literal["vapor", "liquid"], omega_lower: float, iterations: int)-> float:
     """
     Takes in the starting temperature and pressure
     along with the critical temperature and pressure
     to calculate the Z value for the SR EOS based on
-    the given state.\n
-    T = initial temperature of component\n
-    P = initial pressure of component\n
-    Tcrit = critical temperature of component\n
-    Pcrit = critical pressure of component\n
-    state = liquid or vapor 
+    the given state.
+    
+    :param temperature: The temperature of the material
+    :type temperature: class: Temperature
+    :param pressure: The pressure of the material
+    :type pressure: class: Pressure
+    :param Tcrit: The critical temperature of the given material
+    :type Tcrit: class: Temperature
+    :param Pcrit: The critical pressure of the given material
+    :type Pcrit: class: Pressure
+    :param state: state of the material
+    :type state: Literal["vapor", "liquid"]
+    :param omega_lower: The accentric factor for the material
+    :type omega_lower: float
+    :param iterations: Number of iterations used to find the solution
+    :type iterations: int
+    :return: The correction factor Z
+    :rtype: float
+    
+    :Example:
+    
+    >>> T = Temperature(350, "K)
+    >>> Tcrit = Temperature(350, "K")
+    >>> P = Pressure(350, "kPa")
+    >>> Pcrit = Pressure(350, "kPa")
+    >>> z = soave_rendlich_kwong(T, P, Tcrit, Pcrit,"vapor",0.224,  6)
+    >>> 0.4775
     """
     p_reduced = pressure/Pcrit
     t_reduced = temperature/Tcrit
@@ -133,7 +192,35 @@ def soave_rendlich_kwong(temperature: Temperature, pressure: Pressure,
     
 def peng_robinson(temperature: Temperature, pressure: Pressure,
                 Tcrit: Temperature, Pcrit: Pressure,
-                state: str, omega_lower: float, iterations: int):
+                state: Literal["vapor", "liquid"], omega_lower: float, iterations: int):
+    """Calculates a Z correction factor using the peng robinson equation of state
+
+    :param temperature: The temperature of the given material
+    :type temperature: class: Temperature
+    :param pressure: The pressure of the given material
+    :type pressure: class: Pressure
+    :param Tcrit: The critical temperature of the given material
+    :type Tcrit: class: Temperature
+    :param Pcrit: The critical pressure of the given material
+    :type Pcrit: class: Pressure
+    :param state: The state of the material
+    :type state: Literal["vapor", "Liquid"]
+    :param omega_lower: The accentric factor of the given material
+    :type omega_lower: float
+    :param iterations: The number of iterations used for the calculation
+    :type iterations: int
+    :return: The Z correction factor
+    :rtype: float
+    
+     :Example:
+    
+    >>> T = Temperature(350, "K)
+    >>> Tcrit = Temperature(350, "K")
+    >>> P = Pressure(350, "kPa")
+    >>> Pcrit = Pressure(350, "kPa")
+    >>> z = peng_robinson(T, P, Tcrit, Pcrit,"vapor",0.224, 6)
+    >>> 0.2351
+    """
     p_reduced = pressure/Pcrit
     t_reduced = temperature/Tcrit
     
@@ -163,11 +250,6 @@ def peng_robinson(temperature: Temperature, pressure: Pressure,
 
 
     
-if __name__ == "__main__":
-    # T = Temperature(50, 'K')
-    # T2 = Temperature(10, 'K')
-    # T3 = T * T2
-    pass
 
     
     

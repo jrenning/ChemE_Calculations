@@ -13,7 +13,9 @@ from pytest import approx
                                                         (Density(1, "g/cm^3"), "kg/m^3", Density(approx(1000.0), "kg/m^3")),
                                                         (DynamicViscosity(1, "g/cm*s"), "kg/s*m", DynamicViscosity(approx(.1), "kg/s*m")),
                                                         (MultiUnit(1000, "L/s"), "m^3/s", MultiUnit(approx(1), "m^3/s")),
-                                                        (MultiUnit(1, "L/s"), "cm^3/s", MultiUnit(approx(1000), "cm^3/s"))
+                                                        (MultiUnit(1, "L/s"), "cm^3/s", MultiUnit(approx(1000), "cm^3/s")),
+                                                        (MultiUnit(101325, "Pa*m"), "atm*m", MultiUnit(1, "atm*m")),
+                                                        (MultiUnit(100, "Pa*m/s^2*F"), "atm*ft/min^2*K", MultiUnit(approx(20.981833229), "atm*ft/min^2*K"))
                                                         ])
 def test_multi_unit_conversion(unit1, unit2, expected):
     a = unit1.convert_to(unit2)

@@ -1,4 +1,5 @@
-from cheme_calculations.units import Temperature, MultiUnit, LengthUnit, DynamicViscosity
+from cheme_calculations.units import Temperature, MultiUnit
+from cheme_calculations.units.property_units import DynamicViscosity
 
 __all__ = ["wilke_chang"]
         

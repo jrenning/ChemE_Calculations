@@ -5,6 +5,7 @@ from cheme_calculations.units.property_units import Area
 from cheme_calculations.utility import solvable_for
 from math import pi
 from typing import Union
+import math
 
 
 

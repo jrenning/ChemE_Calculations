@@ -9,7 +9,8 @@ from cheme_calculations.utility.utility import remove_zero
 
 
 __all__ = ["Unit", "MultiUnit", "BaseUnit", "Temperature", "Pressure", 
-           "Mass", "Current", "Energy", "Time", "Length","Volume",  "UNIT_REGISTRY"]
+           "Mass", "Current", "Energy", "Time", "Length","Volume",  "UNIT_REGISTRY",
+           "LengthUnits"]
 
 T = TypeVar('T')
 
@@ -103,29 +104,30 @@ UNIT_COMPOSITES = ["L"]
 
  
 class Unit:
+    """ This is a class meant to represent a unit with a value and exponent.
+    
+    Should only consist of a singular unit ie Pa instead of kg/m*s^2
+    
+    :param value: The value for the given unit 
+    :type value: float
+    :param unit: A string representing the unit itself, defaults to ""
+    :type unit: Generic[T]
+    :param exponent: The exponent for the given unit, defaults to 1
+    :type exponent: int
+    :Example:
+    
+    >>> unit = Unit(5, "m", 2)
+    >>> print(unit)
+    >>> 5 m\u00b2
     """
-    A class meant to represent a basic unit with a value and exponent
     
-    Attributes
-    ----------
-    :param value: float
-        the value of the unit
-    :param unit: str
-        the string representing the unit
-    :param exponent: int = 1
-        the number representing the exponent of the unit ie m^2
-    
-    
-    """
-    def __init__(self, value:float=0.0,unit: Generic[T]="unitless", exponent: int=1):
-        """Constructor for the Unit class
+    def __init__(self, value:float=0.0,unit: Generic[T]="", exponent: int=1):
+        """Constructor for the Unit class 
 
-        :param value: value of the unit, defaults to 0.0
-        :type value: float, optional
-        :param unit: unit string, defaults to "unitless"
-        :type unit: Generic[T], optional
-        :param exponent: exponent of the unit, defaults to 1
-        :type exponent: int, optional
+        Args:
+            value: _The value of the unit. Defaults to 0.0.
+            unit: A string representing the unit. Defaults to "".
+            exponent: The exponent of the given unit ie m^2 -> exponent = 2. Defaults to 1.
         """
         self._value = value
         self._unit = unit
@@ -215,8 +217,7 @@ class Unit:
 
         :param unit: The unit to convert to 
         :type unit: str
-        :param inplace:  whether the conversion should create a 
-        new object or not, defaults to False
+        :param inplace:  whether the conversion should create a new object or not, defaults to False
         :type inplace: bool, optional
         :raises UnitConversionError: Raises an error if a unit can't be converted
         :return: Returns a unit of the same class as self withe new value and unit
@@ -262,8 +263,12 @@ class Unit:
 
 # basic class of unit without a value attached, used for constructing multi units by hand 
 class BaseUnit:
-    """Class representing a unit without a value, usually just for internal use
+    """Class representing a unit without a value, only used within MultiUnit
     
+    :param unit: A string representing the unit itself
+    :type unit: Generic[T]
+    :param exponent: The exponent of the given unit, defaults to 1
+    :type exponent: int
     
     """
     def __init__(self,unit: Generic[T], exponent: int = 1):
@@ -304,6 +309,22 @@ def do_common_simplifications(top_half: List[BaseUnit], bottom_half: List[BaseUn
     return top_half, bottom_half
     
 class MultiUnit:
+    """ A class representing a unit that consists of multiple individual units
+    
+    :param value: The value for the unit
+    :type value: float
+    :param unit: A string representing the given unit, defaults to ""
+    :type unit: str 
+    :param top_half: A list of BaseUnits representing the top half of the unit, optional as this is created using the unit string
+    :type top_half: List[class: BaseUnit]
+    :param bottom_half: A list of BaseUnits representing the bottom half of the unit, optional as this is created using the unit string
+    :type bottom_half: List[class: BaseUnit]
+    
+    :Example:
+    
+    >>> mu = MultiUnit(1, "kg*m/s^2)
+    >>> 1 kg*m/s\u00b2
+    """
     def __init__(self, value: float, unit: str="", *,  top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):
         # if passed a unit construct the class from it 
         if unit:
@@ -315,7 +336,18 @@ class MultiUnit:
     
     
     @staticmethod
-    def deconstruct_unit_prefixes(top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
+    def deconstruct_unit_prefixes(top_half: List[BaseUnit], bottom_half: List[BaseUnit])-> tuple:
+        """Deconstructs a given top and bottom half of units to a representation without prefixes
+        and returns a factor to account for it 
+        
+        :param top_half: The top half of the MultiUnit
+        :type top_half: List[BaseUnit]
+        :param bottom_half: The bottom half of the MultiUnit
+        :type bottom_half: List[BaseUnit]
+        :raises UnknownPrefix: raises an error if a prefix is not within the known prefixes
+        :return: list of base units for the top half passed in, list of base units for the bottom half passed in, factor to account for conversion
+        :rtype: tuple(List[class: BaseUnit], List[class: BaseUnit], float)
+        """
         # kg is special in that it is a prefixed unit that is the standard measurement
         top_prefixes = [get_prefix(x._unit)[0] for x in top_half if x._unit != "kg"]
         top_base_units = [BaseUnit(get_prefix(x._unit)[1], x._exponent) if x._unit != "kg" else BaseUnit("kg", x._exponent) for x in top_half]
@@ -350,7 +382,25 @@ class MultiUnit:
 
     
     @staticmethod   
-    def cancel_units(top_half: List[BaseUnit], bottom_half: List[BaseUnit]):
+    def cancel_units(top_half: List[BaseUnit], bottom_half: List[BaseUnit])-> tuple:
+        """Cancels out the units for the given MultiUnit
+
+        :param top_half: List of base units from the top half of the given MultiUnit
+        :type top_half: List[class: BaseUnit]
+        :param bottom_half: List of base units from the bottom half of the given MultiUnit
+        :type bottom_half: List[BaseUnit]
+        :return: new top half with canceled units, new bottom half with canceled units
+        :rtype: tuple(List[class: BaseUnit], List[class: BaseUnit])
+        
+        :Example:
+        
+        >>> mu = MultiUnit(5, "kg*m/m^2")
+        >>> top_half, bottom_half = mu.cancel_units(mu._top_half, mu._bottom_half)
+        >>> print(top_half)
+        >>> kg
+        >>> print(bottom_half)
+        >>> m
+        """
         for u1 in top_half:
             for u2 in bottom_half:
                 if u1._unit == u2._unit and u1._exponent != 0:
@@ -374,7 +424,20 @@ class MultiUnit:
                 final_bottom_half.append(unit)
         return  final_top_half, final_bottom_half
     @staticmethod
-    def combine_units(unit_list: List[BaseUnit]):
+    def combine_units(unit_list: List[BaseUnit])-> List[BaseUnit]:
+        """Combines units of the same name in the passed in list_
+
+        :param unit_list: the unit list to be combined
+        :type unit_list: List[BaseUnit]
+        :return: The combined list of units
+        :rtype: List[BaseUnit]
+        
+        :Example:
+        
+        >>> mu = MultiUnit(5, "m*m/s")
+        >>> top_half = mu.combine_units(mu._top_half)
+        >>> m\u00b2
+        """
         for i, u1 in enumerate(unit_list):
             for j, u2 in enumerate(unit_list):
                 if u1._unit == u2._unit and i != j:
@@ -383,7 +446,23 @@ class MultiUnit:
         return unit_list
     
     @staticmethod
-    def parse_units(unit_string: str):
+    def parse_units(unit_string: str)-> tuple:
+        """Parses a given unit string to lists of top and bottom units
+
+        :param unit_string: The unit to be parsed, use * for units multiplied and / to seperate the fraction
+        :type unit_string: str
+        :return: A tuple of the top half of base units then bottom half 
+        :rtype: tuple(List[BaseUnit], List[BaseUnit])
+        
+        :Example:
+        
+        >>> top_half, bottom_half = MultiUnit.parse_units("m/s")
+        >>> print(top_half)
+        >>> m
+        >>> print(bottom_half)
+        >>> s
+        
+        """
         try:
             top_half, bottom_half = unit_string.split("/")
             bottom_units = bottom_half.strip().split("*")
@@ -428,7 +507,27 @@ class MultiUnit:
         
     
     def deconstruct_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit], 
-                          one_pass: bool = False):
+                          one_pass: bool = False)-> tuple:
+        """A method to deconstruct composite units ie Pa to base units ie kg/m*s^2
+
+        :param top_list: The top list of the given MultiUnit
+        :type top_list: List[BaseUnit]
+        :param bottom_list: The bottom list of the given MultiUnit
+        :type bottom_list: List[BaseUnit]
+        :param one_pass: if only one pass of deconstruct should happen ie W -> J/s instead of W -> kg*m^2/s^3, defaults to False
+        :type one_pass: bool, optional
+        :return: ne top half with units deconstructed, the bottom half with units deconstructed 
+        :rtype: tuple(List[BaseUnit], List[BaseUnit])
+        
+        :Example:
+        
+        >>> mu = MultiUnit(1, "Pa/K")
+        >>> top_half, bottom_half = mu.deconstruct_units(mu._top_half, mu._bottom_half)
+        >>> print(top_half)
+        >>> kg
+        >>> print(bottom_half)
+        >>> "K*m*s\u00b2"
+        """
         
         top_list = deepcopy(top_list)
         bottom_list = deepcopy(bottom_list)
