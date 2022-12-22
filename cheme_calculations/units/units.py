@@ -702,48 +702,48 @@ class MultiUnit:
         except KeyError as _:
             raise KeyError(f"{unit} is not a valid unit in the registry")
         
-        if unit_class == "Length":
-            return Length
-        elif unit_class == "Mass":
-            return Mass
-        elif unit_class == "Time":
-            return Time
-        elif unit_class == "Temperature":
-            return Temperature
-        elif unit_class == "Current":
-            return Current
-        elif unit_class == "Force":
-            return Force
-        elif unit_class == "Pressure":
-            return Pressure
-        elif unit_class == "Volume":
-            return Volume
-        elif unit_class == "Energy":
-            return Energy
-        else:
-            raise KeyError(f"UNIT REGISTRY is improperly formatted")
+        # if unit_class == "Length":
+        #     return Length
+        # elif unit_class == "Mass":
+        #     return Mass
+        # elif unit_class == "Time":
+        #     return Time
+        # elif unit_class == "Temperature":
+        #     return Temperature
+        # elif unit_class == "Current":
+        #     return Current
+        # elif unit_class == "Force":
+        #     return Force
+        # elif unit_class == "Pressure":
+        #     return Pressure
+        # elif unit_class == "Volume":
+        #     return Volume
+        # elif unit_class == "Energy":
+        #     return Energy
+        # else:
+        #     raise KeyError(f"UNIT REGISTRY is improperly formatted")
         
-        # match unit_class:
-        #     case "Length":
-        #         return Length
-        #     case "Mass":
-        #         return Mass
-        #     case "Time":
-        #         return Time
-        #     case "Temperature":
-        #         return Temperature
-        #     case "Current":
-        #         return Current
-        #     case "Energy":
-        #         return Energy
-        #     case "Pressure":
-        #         return Pressure
-        #     case "Force":
-        #         return Force
-        #     case "Volume":
-        #         return Volume
-        #     case _:
-        #         raise KeyError(f"UNIT REGISTRY is improperly formatted")
+        match unit_class:
+            case "Length":
+                return Length
+            case "Mass":
+                return Mass
+            case "Time":
+                return Time
+            case "Temperature":
+                return Temperature
+            case "Current":
+                return Current
+            case "Energy":
+                return Energy
+            case "Pressure":
+                return Pressure
+            case "Force":
+                return Force
+            case "Volume":
+                return Volume
+            case _:
+                raise KeyError(f"UNIT REGISTRY is improperly formatted")
         
         
     def get_exponent_total(self)-> float:
