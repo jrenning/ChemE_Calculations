@@ -62,13 +62,18 @@ ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 #ans = planar_flux(k, T1, T2, x)
 
+from cheme_calculations.thermodynamics import rendlich_kwong
+
 T = Temperature(350, "K")
 Tcrit = Temperature(350, "K")
 P = Pressure(350, "kPa")
 Pcrit = Pressure(350, "kPa")
-z = peng_robinson(T, P, Tcrit, Pcrit,"vapor", 0.224, 6)
+
+z = rendlich_kwong(T, P, Tcrit, Pcrit, "vapor", 6)
 
 print(z)
+
+# 0.4777
 
 
 
