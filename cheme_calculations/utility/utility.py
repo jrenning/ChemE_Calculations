@@ -2,7 +2,6 @@ from itertools import chain, combinations
 from typing import Callable, List, Literal
 from inspect import getfullargspec
 from functools import wraps
-from pprint import pprint
 
 # to get around circular import 
 import cheme_calculations.units as u
@@ -26,6 +25,12 @@ def powerset(iterable):
 
 
 def solvable_for(solvable: List[str]):
+    """Decorator function that helps determine what an equation should be solved for 
+    and if that is a valid thing to solve for 
+
+    :param solvable: List of parameters in the function that can be solved for 
+    :type solvable: List[str]
+    """
     def inner(func: Callable):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -72,7 +77,15 @@ def solvable_for(solvable: List[str]):
 
 
 
-def remove_zero(x: float):
+def remove_zero(x: float)-> int | float:
+    """Removes trailing zeros from numbers that could be integers ie 3.0 -> 3
+    
+
+    :param x: number to remove zero from
+    :type x: float
+    :return: Returns the integer if has a trailing zero, otherwise just returns the input
+    :rtype: int | float
+    """
     new_x = str(x)
     if ".0" in new_x:
         return int(x)
@@ -80,7 +93,21 @@ def remove_zero(x: float):
         return x
 
 
-def get_prefix(unit: str):
+def get_prefix(unit: str)-> tuple:
+    """Gets the prefix of a given unit
+    
+    things that don't have prefixes 
+    1. units of only one letter ie m
+    2. units that don't start with a prefix
+    3. units that aren't covered in the first two and are exceptions
+    
+    - Returns "" for units without a prefix
+
+    :param unit: The unit to look for a prefix in
+    :type unit: str
+    :return: tuple of the prefix and the unit with it removed (if there is a prefix)
+    :rtype: tuple
+    """
     # things that don't have prefixes 
     # 1. units of only one letter ie m
     # 2. units that don't start with a prefix

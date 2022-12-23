@@ -130,13 +130,51 @@ def planar_flux(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[
         return T1
 
 def pipe_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,
-                length: Length, thickness: Length)-> HeatFlux:
+                length: Length, thickness: Length)-> Power:
+    """Calculates the heat transfer through a pipe at steady state
+
+    :param k: Thermal conductivity of the pipe
+    :type k: ThermalConductivity
+    :param T1: Temperature the heat is coming from
+    :type T1: Temperature
+    :param T2: Temperature the heat is going to 
+    :type T2: Temperature
+    :param length: Length of the pipe
+    :type length: Length
+    :param thickness: Thickness of the pipe
+    :type thickness: Length
+    :return: Heat transfer through the pipe
+    :rtype: Power
+    
+    :Example:
+    
+    >>>
+    """
     
     q = -2*pi*length*k*((T2-T1)/(math.log(thickness._value)))
     return q
 
 def sphere_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,
-                outer_radius: Length, inner_radius: Length):
+                outer_radius: Length, inner_radius: Length)-> Power:
+    """Calculates the heat transfer through a sphere at steady state
+
+    :param k: Thermal conductivity of the material
+    :type k: ThermalConductivity
+    :param T1: Temperature the heat is flowing from
+    :type T1: Temperature
+    :param T2: Temperature the heat is flowing to
+    :type T2: Temperature
+    :param outer_radius: Outer radius of the sphere
+    :type outer_radius: Length
+    :param inner_radius: Inner radius of the sphere
+    :type inner_radius: Length
+    :return: The heat transfer through the sphere
+    :rtype: Power
+    
+    :Example:
+    
+    >>>
+    """
     q = -4*pi*inner_radius*outer_radius*((T2-T1)/(outer_radius-inner_radius))
     return q
 

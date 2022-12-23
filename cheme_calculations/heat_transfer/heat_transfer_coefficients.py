@@ -13,11 +13,11 @@ def htc_open_field_laminar_local(Re: float, Pr: float, L: Length,
     :param Pr: The Prandlt number of the fluid
     :type Pr: float
     :param L: The length of the object flow is against
-    :type L: class: Length
+    :type L: Length
     :param k: Thermal conductivity of the fluid
-    :type k: class: ThermalConductivity
+    :type k: ThermalConductivity
     :return: A heat transfer coefficient
-    :rtype: class: HeatTransferCoefficient
+    :rtype: HeatTransferCoefficient
     
     :Example:
     
@@ -49,11 +49,11 @@ def htc_open_field_laminar_avg(Re: float, Pr: float, L: Length,
     :param Pr: The Prandlt number of the fluid
     :type Pr: float
     :param L: The length of the object flow is against
-    :type L: class: Length
+    :type L: Length
     :param k: Thermal conductivity of the fluid
-    :type k: class: ThermalConductivity
+    :type k: ThermalConductivity
     :return: A heat transfer coefficient
-    :rtype: class: HeatTransferCoefficient
+    :rtype: HeatTransferCoefficient
     
     :Example:
     
