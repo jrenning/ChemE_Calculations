@@ -1,4 +1,5 @@
 from math import floor
+from pprint import pprint
 from typing import Literal, Self, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
@@ -874,6 +875,9 @@ class MultiUnit:
         # remove any zeros 
         new_unit_dict = {k:v for k, v in new_unit_dict.items() if v != 0}
         self_unit_dict = {k:v for k, v in self_unit_dict.items() if v != 0}
+        
+        pprint(new_unit_dict)
+        pprint(self_unit_dict)
             
         if new_unit_dict != self_unit_dict:
             raise UnitConversionError(f"The conversion from {self.__repr__()} to {unit} is not allowed")

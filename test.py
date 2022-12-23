@@ -41,7 +41,6 @@ k = ThermalConductivity(0.6, "kW/m*K")
 # ans = flux_max_boiling(hvap, Density(0.623, "kg/m^3"), Density(957.7, "kg/m^3"), 
 #                        MultiUnit(.058, "kg/s^2"), g)
 
-ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 # mat_strength = Pressure(85000, "psi")
 # wall_thickness = Length(1.9E-3, "m")
@@ -62,15 +61,18 @@ ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 #ans = planar_flux(k, T1, T2, x)
 
-from cheme_calculations.heat_transfer import planar_heat
 k = ThermalConductivity(0.6, "W/m*K")
-T1 = Temperature(500, "K")
-T2 = Temperature(300, "K")
-A = Area(15, "m^2")
-thickness = Length(1, "m")
-q = planar_heat(k, T1, T2, A, thickness)
-thickness = planar_heat(k, T1, T2, A,None,q)
-print(thickness)
+rho = Density(800, "kg/m^3")
+g = Gravity(9.81, "m/s^2")
+hv = Hvap(3000, "J/kg")
+num_pipes = 4
+T2 = Temperature(400, "K")
+T1 = Temperature(300, "K")
+d = Length(1, "m")
+mu = DynamicViscosity(.001, "kg/m*s")
+h = condensation_transfer_coefficient(k, rho, g, hv, num_pipes, T2, T1, d, mu)
+print(h)
+
 
 
 

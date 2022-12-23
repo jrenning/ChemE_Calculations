@@ -70,23 +70,63 @@ def planar_heat(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[
         T1 = -((thickness*q)/(-k * A)) + T2
         return T1
     
-@solvable_for(solvable=["q", "T1", "T2", "thickness"])
+@solvable_for(solvable=["qA", "T1", "T2", "thickness"])
 def planar_flux(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[Temperature, None],
-                thickness: Union[Length, None], q: HeatFlux = None, **kwargs)-> Union[HeatFlux, Temperature, Length]:
+                thickness: Union[Length, None], qA: HeatFlux = None, **kwargs)-> Union[HeatFlux, Temperature, Length]:
+    """Function to solve the heat flux through a planar surface at steady state
+    
+    Can solve for other parameters as long as there is only one unknown
+    
+    Supply [k, T1, T2, thickness] -> qA (HeatFlux) \n
+    Supply [k, T1, T2, qA] -> thickness (Length) \n
+    Supply [k, T2, thickness, qA] -> T1 (Temperature) \n
+    Supply [k, T1, thickness, qA] -> T2 (Temperature) \n
+    
+
+    :param k: Thermal conductivity of the planar surface
+    :type k: ThermalConductivity
+    :param T1: Temperature on side heat flow starts from 
+    :type T1: Union[Temperature, None]
+    :param T2: Temperature on the side heat flow goes to
+    :type T2: Union[Temperature, None]
+    :param A: Area of the surface
+    :type A: Area
+    :param thickness: Thickness of the surface
+    :type thickness: Union[Length, None]
+    :param q: The heat flow through the surface, defaults to None
+    :type q: Power, optional
+    :return: See chart above
+    :rtype: Union[Power, Temperature, Length]
+    
+    :Example:
+    
+    >>> from cheme_calculations.heat_transfer import planar_flux
+    >>> k = ThermalConductivity(0.6, "W/m*K")
+    >>> T1 = Temperature(500, "K")
+    >>> T2 = Temperature(300, "K")
+    >>> thickness = Length(1, "m")
+    >>> qA = planar_heat(k, T1, T2, thickness)
+    >>> print(qA)
+    >>> 120.0 W / m²
+    >>> thickness = planar_heat(k, T1, T2, None,qA)
+    >>> print(thickness)
+    >>> 1.0 m
+    
+    """
     
     solving_for = kwargs["solving_for"]
     
-    if solving_for == "q":
-        q = -k * ((T2-T1)/thickness)
-        return q
+    if solving_for == "qA":
+        qA = -k * ((T2-T1)/thickness)
+        return qA
     if solving_for == "thickness":
-        thickness = (-k*(T2-T1))/q
+        thickness = (-k*(T2-T1))/qA
         return thickness
     if solving_for == "T2":
-        T2 = ((thickness*q)/(-k)) + T1
+        T2 = ((thickness*qA)/(-k)) + T1
         return T2
     if solving_for == "T1":
-        T1 = -((thickness*q)/(-k)) + T2
+        T1 = -((thickness*qA)/(-k)) + T2
         return T1
 
 def pipe_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,
