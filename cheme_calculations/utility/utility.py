@@ -81,7 +81,11 @@ def remove_zero(x: float):
 
 
 def get_prefix(unit: str):
-    if len(unit) == 1 or unit[0] not in ["m", "c", "d", "k", "M"]:
+    # things that don't have prefixes 
+    # 1. units of only one letter ie m
+    # 2. units that don't start with a prefix
+    # 3. units that aren't covered in the first two and are exceptions
+    if len(unit) == 1 or unit[0] not in ["m", "c", "d", "k", "M"] or unit in ["min", "cP"]:
         return ("", unit)
     else:
         return (unit[0], unit[1:])

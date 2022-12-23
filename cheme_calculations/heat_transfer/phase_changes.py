@@ -3,13 +3,13 @@ from cheme_calculations.units.property_units import Density, DynamicViscosity, G
 from cheme_calculations.units.units import MultiUnit
 from .unit_types import HeatTransferCoefficient, ThermalConductivity
 
-
+__all__ = ['condensation_transfer_coefficient', "flux_max_boiling"]
 
 def condensation_transfer_coefficient(k: ThermalConductivity, 
                                       rho: Density, g: Gravity,
                                       hvap: Hvap, num_pipes: int, 
                                       T2: Temperature, T1: Temperature, 
-                                      diameter: Length, mu: DynamicViscosity):
+                                      diameter: Length, mu: DynamicViscosity) -> HeatTransferCoefficient:
     
     
     

@@ -7,7 +7,7 @@ from math import pi
 from typing import Union
 import math
 
-
+__all__ = ["planar_heat", "planar_flux", "pipe_heat", "sphere_heat"]
 
 @solvable_for(solvable=["q", "T1", "T2", "thickness"])
 def planar_heat(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[Temperature, None],

@@ -1,7 +1,7 @@
 from typing import Literal
 from cheme_calculations.units import Pressure, Length
 
-
+__all__ = ["max_vessel_pressure"]
 
 def max_vessel_pressure(material_strength: Pressure, 
                         wall_thickness: Length,

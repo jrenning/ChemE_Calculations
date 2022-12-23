@@ -349,27 +349,27 @@ class MultiUnit:
         :rtype: tuple(List[class: BaseUnit], List[class: BaseUnit], float)
         """
         # kg is special in that it is a prefixed unit that is the standard measurement
-        top_prefixes = [get_prefix(x._unit)[0] for x in top_half if x._unit != "kg"]
+        top_prefixes = [get_prefix(x._unit)[0] if x._unit != "kg" else "" for x in top_half]
         top_base_units = [BaseUnit(get_prefix(x._unit)[1], x._exponent) if x._unit != "kg" else BaseUnit("kg", x._exponent) for x in top_half]
-        bottom_prefixes = [get_prefix(x._unit)[0] for x in bottom_half if x._unit != "kg"]
+        bottom_prefixes = [get_prefix(x._unit)[0] if x._unit != "kg" else "" for x in bottom_half]
         bottom_base_units = [BaseUnit(get_prefix(x._unit)[1], x._exponent) if x._unit != "kg" else BaseUnit("kg", x._exponent) for x in bottom_half]
         
         factor = 1
         
-        for prefix in top_prefixes:
+        for i, prefix in enumerate(top_prefixes):
             # if not empty string
             if prefix:
                 try:
-                    factor *= prefix_factors[prefix]
+                    factor *= prefix_factors[prefix]**top_base_units[i]._exponent
                 except:
                     raise UnknownPrefix(f"The prefix of {prefix} is invalid")
         
-        for prefix in bottom_prefixes:
+        for i, prefix in enumerate(bottom_prefixes):
             # if not empty
             if prefix:
                 try:
                     # inverse for bottom prefixes
-                    factor *= (1/prefix_factors[prefix])
+                    factor *= (1/prefix_factors[prefix])**bottom_base_units[i]._exponent
                 except:
                     raise UnknownPrefix(f"The prefix of {prefix} is invalid")
         
@@ -777,25 +777,24 @@ class MultiUnit:
       
     def convert_to(self, unit: str, inplace: bool =False):       
         convert_top, convert_bottom = self.parse_units(unit)
-                # deconstruct with one pass first to get rid of things like W
+        # deconstruct with one pass first to get rid of things like W
+        convert_top, convert_bottom, prefix_factor_r = self.deconstruct_unit_prefixes(convert_top, convert_bottom)
         convert_top, convert_bottom = self.deconstruct_units(convert_top, convert_bottom, one_pass=True)
         convert_top, convert_bottom = self.base_to_unit(convert_top, convert_bottom)
         
         # get top and bottom half of self 
         # deconstruct with one pass first to get rid of things like W
-        new_top_half, new_bottom_half = self.deconstruct_units(deepcopy(self._top_half), deepcopy(self._bottom_half), one_pass=True)
+        new_top_half, new_bottom_half, prefix_factor_l = self.deconstruct_unit_prefixes(deepcopy(self._top_half), deepcopy(self._bottom_half))
+        new_top_half, new_bottom_half = self.deconstruct_units(new_top_half, new_bottom_half, one_pass=True)
         new_top_half, new_bottom_half = self.base_to_unit(new_top_half, new_bottom_half)
         
         
-        # if converting to the same unit return
-        if convert_top == new_top_half and convert_bottom == new_bottom_half:
-            return self 
 
         # flow diagram for converting units
         # english -> SI -> base units -> SI -> english
 
         # first convert self unit to base units 
-        left_factor = 1
+        left_factor = 1*prefix_factor_l
         for u1 in new_top_half:
             u1 = self.convert_and_get_factor(u1)
             left_factor *= u1._value
@@ -810,7 +809,7 @@ class MultiUnit:
         
         # do the same steps to the right side 
         
-        right_factor = 1
+        right_factor = 1*prefix_factor_r
         for u1 in convert_top:
             u1 = self.convert_and_get_factor(u1)
             right_factor *= u1._value
@@ -834,6 +833,10 @@ class MultiUnit:
             self_unit_dict[str(self.get_unit_class(u1._unit))] += 1*u1._exponent
         for u2 in new_bottom_half:
             self_unit_dict[str(self.get_unit_class(u2._unit))] += -1*u2._exponent
+            
+        # remove any zeros 
+        new_unit_dict = {k:v for k, v in new_unit_dict.items() if v != 0}
+        self_unit_dict = {k:v for k, v in self_unit_dict.items() if v != 0}
             
         if new_unit_dict != self_unit_dict:
             raise UnitConversionError(f"The conversion from {self.__repr__()} to {unit} is not allowed")

@@ -4,6 +4,10 @@ from cheme_calculations.units import MultiUnit, Temperature, Length, Time, Volum
 from .unit_types import HeatTransferCoefficient, ThermalConductivity
 from math import erf, exp, pi, sin, sqrt
 
+__all__ = ["pseudo_steady_time", "semi_infinite_slab_conduction",
+           "lumped_parameter", "finite_slab_conduction"]
+
+
 
 def pseudo_steady_time(density: MultiUnit, heat_of_vaporization: MultiUnit, k: ThermalConductivity,
                        T_surface: Temperature, T_melt: Temperature, initial_length: Length,

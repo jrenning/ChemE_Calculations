@@ -18,11 +18,3 @@ def three_d_pulse_decay(initial_mass: Mass, distance: Length, diffusion_coeffici
     
     return C
 
-if __name__ == "__main__":
-    ans = three_d_pulse_decay(Mass(5000, "kg"), Length(50, "m"),
-                              MultiUnit(1E-1,"m^2/s"),Time(120, "s"), "cube")
-    
-    
-
-    
-    print(ans)

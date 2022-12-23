@@ -6,9 +6,6 @@ class Area(Unit):
         unit, _ = unit.split("^")
         super().__init__(value, unit, 2)
         
-
-
-
 class Velocity(MultiUnit):
     def __init__(self,value:float, unit: str, *, top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit] = []):
         if top_half and bottom_half:

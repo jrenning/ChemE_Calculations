@@ -2,7 +2,7 @@ from cheme_calculations.units import MultiUnit, Length, Unit
 from .unit_types import HeatTransferCoefficient, ThermalConductivity
 
 
-
+__all__ = ["htc_open_field_laminar_local", "htc_open_field_laminar_avg"]
 
 def htc_open_field_laminar_local(Re: float, Pr: float, L: Length,
                              k: ThermalConductivity)-> HeatTransferCoefficient:

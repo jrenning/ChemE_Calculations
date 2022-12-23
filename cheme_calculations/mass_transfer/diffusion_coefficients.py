@@ -12,9 +12,4 @@ def wilke_chang(temperature: Temperature, theta_b: float, moleclar_weight_b: Mul
     return MultiUnit(answer, "cm^2/s")
 
 
-if __name__ == "__main__":
-
-    v = DynamicViscosity(50, "cP")
-    v.convert_to("kg/s*m", True)
-    print(v)
     
