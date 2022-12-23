@@ -9,10 +9,10 @@ __all__ = ["pseudo_steady_time", "semi_infinite_slab_conduction",
 
 
 
-def pseudo_steady_time(density: MultiUnit, heat_of_vaporization: MultiUnit, k: ThermalConductivity,
+def pseudo_steady_time(density: Density, heat_of_fusion: MultiUnit, k: ThermalConductivity,
                        T_surface: Temperature, T_melt: Temperature, initial_length: Length,
                        final_length: Length)-> Time:
-    term1 = (density*heat_of_vaporization)/(k*(T_surface-T_melt))
+    term1 = (density*heat_of_fusion)/(k*(T_surface-T_melt))
     term2 = (final_length**2-initial_length**2)/2
     t = term1*term2
     return t

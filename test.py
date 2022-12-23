@@ -62,10 +62,15 @@ ans = condensation_transfer_coefficient(k, d, g, hvap, 5, T2, T1, x, mu)
 
 #ans = planar_flux(k, T1, T2, x)
 
-v = Velocity(3, 'm/s')
-v2 = v.convert_to("cm/s")
-
-# 0.4777
+from cheme_calculations.heat_transfer import planar_heat
+k = ThermalConductivity(0.6, "W/m*K")
+T1 = Temperature(500, "K")
+T2 = Temperature(300, "K")
+A = Area(15, "m^2")
+thickness = Length(1, "m")
+q = planar_heat(k, T1, T2, A, thickness)
+thickness = planar_heat(k, T1, T2, A,None,q)
+print(thickness)
 
 
 

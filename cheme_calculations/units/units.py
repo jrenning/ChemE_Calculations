@@ -1,5 +1,5 @@
 from math import floor
-from typing import Literal, TypeVar, Generic, Union, List
+from typing import Literal, Self, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
 from cheme_calculations.utility import to_sup, get_prefix
@@ -570,7 +570,29 @@ class MultiUnit:
         
         return top_list, bottom_list
     
-    def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit]):
+    def simplify_units(self, top_list: List[BaseUnit], bottom_list: List[BaseUnit])-> tuple:
+        """MultiUnit class method to attempt to simplify units to a simpler form ie J/s to W
+        
+        Note: The current implementation will do simple simplifications right but will fail to
+        recognize that a unit like kg/s^3 can be converted to W/m^2, which could technically
+        be considered simpler 
+
+        :param top_list: Top half of the MultiUnit
+        :type top_list: List[BaseUnit]
+        :param bottom_list: Bottom half of the MultiUnit
+        :type bottom_list: List[BaseUnit]
+        :return: (top list of simplified units, bottom list of simplified units)
+        :rtype: tuple(List[BaseUnit], List[BaseUnit])
+        
+        :Example:
+        
+        >>> mu = MultiUnit("J/s")
+        >>> top_half, bottom_half = mu.simplify_units(mu._top_half, mu._bottom_half)
+        >>> print(top_half)
+        >>> W
+        >>> print(bottom_half)
+        >>> ""
+        """
         # TODO improve algorithm to also have preference for units with less exponents
         matches_dict = defaultdict(lambda: 0)
         
@@ -697,32 +719,18 @@ class MultiUnit:
         
     @staticmethod 
     def get_unit_class(unit: str):
+        """Returns the class that a unit string corresponds to ie kg -> Mass
+
+        :param unit: A string representing the unit, should be a singular unit ie m (not m*s)
+        :type unit: str
+        :raises KeyError: Raises a key error if the unit is not in the UNiT_REGISTRY
+        :return: Returns the class of the given unit
+        :rtype: Type[Length] | Type[Mass] | Type[Time] | Type[Temperature] | Type[Current] | Type[Energy] | Type[Pressure] | Type[Force] | Type[Volume]
+        """
         try:
             unit_class = UNIT_REGISTRY[unit]
         except KeyError as _:
             raise KeyError(f"{unit} is not a valid unit in the registry")
-        
-        # if unit_class == "Length":
-        #     return Length
-        # elif unit_class == "Mass":
-        #     return Mass
-        # elif unit_class == "Time":
-        #     return Time
-        # elif unit_class == "Temperature":
-        #     return Temperature
-        # elif unit_class == "Current":
-        #     return Current
-        # elif unit_class == "Force":
-        #     return Force
-        # elif unit_class == "Pressure":
-        #     return Pressure
-        # elif unit_class == "Volume":
-        #     return Volume
-        # elif unit_class == "Energy":
-        #     return Energy
-        # else:
-        #     raise KeyError(f"UNIT REGISTRY is improperly formatted")
-        
         match unit_class:
             case "Length":
                 return Length
@@ -747,6 +755,17 @@ class MultiUnit:
         
         
     def get_exponent_total(self)-> float:
+        """Gets the exponent total of the given unit ie m^2/s^2 -> 4
+
+        :return: The exponent total
+        :rtype: float
+        
+        :Example:
+        
+        >>> mu = MultiUnit(5, "m^2/s^2")
+        >>> total = mu.get_exponent_total()
+        >>> 4
+        """
         exponent_total = 0
         for u1 in self._top_half:
             exponent_total += u1._exponent
@@ -775,7 +794,25 @@ class MultiUnit:
         return unit
         
       
-    def convert_to(self, unit: str, inplace: bool =False):       
+    def convert_to(self, unit: str, inplace: bool =False)-> Self | None:
+        """Converts self from its unit to a new unit
+        
+        General algorithm for the conversion
+        - (self / left side) English -> metric -> base units (SI)
+        - This gives a conversion factor from self to base units
+        - (unit / right side) English -> metric -> base units (SI)
+        - This gives a conversion factor from unit to base units
+        - Final value can then be found by using the (first factor / second factor) * og_value
+        - Note: Improper conversions are found by comparing the base units 
+
+        :param unit: String representing the unit to convert to
+        :type unit: str
+        :param inplace: Wether or not the function should return a new object(False), or modify the unit in place(True), defaults to False
+        :type inplace: bool, optional
+        :raises UnitConversionError: Raises an error if self can't be converted to the new unit 
+        :return: A new MultiUnit with the new units | None
+        :rtype: Self@MultiUnit | None
+        """
         convert_top, convert_bottom = self.parse_units(unit)
         # deconstruct with one pass first to get rid of things like W
         convert_top, convert_bottom, prefix_factor_r = self.deconstruct_unit_prefixes(convert_top, convert_bottom)
@@ -907,15 +944,15 @@ class MultiUnit:
                 
                 # if all units cancel
                 if len(final_top_half) == 0 and len(final_bottom_half) == 0:
-                    return self._value / other._value
+                    return (self._value / other._value)*factor
                 
                 #if just left with one unit
                 if len(final_top_half) == 1 and len(final_bottom_half) == 0:
-                    return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                    return Unit((self._value / other._value)*factor, final_top_half[0]._unit, final_top_half[0]._exponent)
                 
                 # one unit in the bottom
                 if len(final_top_half) == 0 and len(final_bottom_half) == 1:
-                    return Unit(self._value / other._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
+                    return Unit((self._value / other._value)*factor, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
                 
                 return MultiUnit((self._value / other._value)*factor, top_half=final_top_half, bottom_half=final_bottom_half)
         elif other.__class__.__bases__[0] == Unit or other.__class__ == Unit:
@@ -934,17 +971,17 @@ class MultiUnit:
             
             # if all units cancel
             if len(final_top_half) == 0 and len(final_bottom_half) == 0:
-                return self._value / other._value
+                return (self._value / other._value)*factor
             
             #if just left with one unit
             if len(final_top_half) == 1 and len(final_bottom_half) == 0:
-                return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                return Unit((self._value / other._value)*factor, final_top_half[0]._unit, final_top_half[0]._exponent)
             
             # one unit in the bottom
             if len(final_top_half) == 0 and len(final_bottom_half) == 1:
-                return Unit(self._value / other._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
+                return Unit((self._value / other._value)*factor, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
             
-            return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
+            return MultiUnit((self._value / other._value)*factor, top_half=final_top_half, bottom_half=final_bottom_half)
         
         elif isinstance(other, Union[int, float]):
             return MultiUnit(self._value / other, top_half=self._top_half, bottom_half=self._bottom_half)
@@ -1186,6 +1223,7 @@ class Energy(Unit):
     # from target unit to standard unit 
     to_standard_conversions = {
         "mJ": lambda x: x/1000,
+        "cJ": lambda x: x/100,
         "dJ": lambda x: x/10,
         "kJ": lambda x: x*1000,
         "MJ": lambda x: x*1E6,
@@ -1194,6 +1232,7 @@ class Energy(Unit):
     # form standard unit to the target unit 
     from_standard_conversions = {
         "mJ": lambda x: x*1000,
+        "cJ": lambda x: x*100,
         "dJ": lambda x: x*10,
         "kJ": lambda x: x/1000,
         "MJ": lambda x: x/1E6,
