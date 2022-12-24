@@ -10,6 +10,7 @@ from cheme_calculations.units.units import BaseUnit, Mass, MultiUnit, Pressure, 
 from cheme_calculations.thermodynamics.cubic_equations import peng_robinson, rendlich_kwong, soave_rendlich_kwong, van_der_waals
 
 from cheme_calculations.process_safety import max_vessel_pressure
+from cheme_calculations.utility.get_chemical_properties import get_water_properties
 
 
 k = ThermalConductivity(0.6, "kW/m*K")
@@ -61,17 +62,9 @@ k = ThermalConductivity(0.6, "kW/m*K")
 
 #ans = planar_flux(k, T1, T2, x)
 
-from cheme_calculations.heat_transfer import lumped_parameter
-Tf = Temperature(400, "K")
-To = Temperature(300, "K")
-h = HeatTransferCoefficient(5, "W/m^2*K")
-A = Area(1, "m^2")
-rho = Density(800, "kg/m^3")
-cp = Cp(1, "J/kg*K")
-V = Volume(.5, "m^3")
-time = Time(100, "s")
-T = lumped_parameter(Tf, To, h, A, rho, cp, V, time)
-print(T)
+w = get_water_properties(275)
+
+print(w._density)
 
 
 
