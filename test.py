@@ -61,18 +61,17 @@ k = ThermalConductivity(0.6, "kW/m*K")
 
 #ans = planar_flux(k, T1, T2, x)
 
-k = ThermalConductivity(0.6, "W/m*K")
+from cheme_calculations.heat_transfer import lumped_parameter
+Tf = Temperature(400, "K")
+To = Temperature(300, "K")
+h = HeatTransferCoefficient(5, "W/m^2*K")
+A = Area(1, "m^2")
 rho = Density(800, "kg/m^3")
-g = Gravity(9.81, "m/s^2")
-hv = Hvap(3000, "J/kg")
-num_pipes = 4
-T2 = Temperature(400, "K")
-T1 = Temperature(300, "K")
-d = Length(1, "m")
-mu = DynamicViscosity(.001, "kg/m*s")
-h = condensation_transfer_coefficient(k, rho, g, hv, num_pipes, T2, T1, d, mu)
-print(h)
-
+cp = Cp(1, "J/kg*K")
+V = Volume(.5, "m^3")
+time = Time(100, "s")
+T = lumped_parameter(Tf, To, h, A, rho, cp, V, time)
+print(T)
 
 
 

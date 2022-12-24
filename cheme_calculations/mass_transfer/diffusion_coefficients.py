@@ -1,11 +1,12 @@
 from cheme_calculations.units import Temperature, MultiUnit
+from cheme_calculations.units.mass_transfer import DiffusionCoefficient
 from cheme_calculations.units.property_units import DynamicViscosity
 
 __all__ = ["wilke_chang"]
         
 
 def wilke_chang(temperature: Temperature | float, theta_b: float, moleclar_weight_b: MultiUnit | float,
-                viscosity_b: MultiUnit | float, molecular_volume_a: MultiUnit | float):
+                viscosity_b: MultiUnit | float, molecular_volume_a: MultiUnit | float)-> DiffusionCoefficient:
     """Calculates a liquid liquid diffusion coefficient based on the Wilke-Chnang equation
     
     NOTE: This is an empirical equation so units must be correct
@@ -43,7 +44,11 @@ def wilke_chang(temperature: Temperature | float, theta_b: float, moleclar_weigh
     
     answer = (7.4E-8*(theta_b*moleclar_weight_b)**(1/2)*temperature)/(viscosity_b*molecular_volume_a**0.6)
     
-    return MultiUnit(answer, "cm^2/s")
+    # if units were supplied just cast the final value to the right units 
+    if answer.__class__ == MultiUnit:
+        return DiffusionCoefficient(answer._value, "cm^2/s")
+    else:
+        return DiffusionCoefficient(answer, "cm^2/s")
 
 
     

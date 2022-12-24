@@ -1,6 +1,6 @@
 from math import floor
 from pprint import pprint
-from typing import Literal, Self, TypeVar, Generic, Union, List
+from typing import Any, Literal, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
 from cheme_calculations.utility import to_sup, get_prefix
@@ -795,7 +795,7 @@ class MultiUnit:
         return unit
         
       
-    def convert_to(self, unit: str, inplace: bool =False)-> Self | None:
+    def convert_to(self, unit: str, inplace: bool =False)-> Any | None:
         """Converts self from its unit to a new unit
         
         General algorithm for the conversion
@@ -875,9 +875,6 @@ class MultiUnit:
         # remove any zeros 
         new_unit_dict = {k:v for k, v in new_unit_dict.items() if v != 0}
         self_unit_dict = {k:v for k, v in self_unit_dict.items() if v != 0}
-        
-        pprint(new_unit_dict)
-        pprint(self_unit_dict)
             
         if new_unit_dict != self_unit_dict:
             raise UnitConversionError(f"The conversion from {self.__repr__()} to {unit} is not allowed")
@@ -1328,8 +1325,9 @@ class Volume(Unit):
         "gal": lambda x: x/0.00454609,
     }
     def __init__(self, value: float, unit: str, exponent: int = 1):
-        if unit == "L":
-            super().__init__(value, unit, exponent)
+        if "^" in unit:
+            unit, exponent = unit.split("^")
+            super().__init__(value, unit, float(exponent))
         else:
             super().__init__(value, unit, exponent)
     

@@ -2,9 +2,11 @@ from cheme_calculations.units import Mass, Length, MultiUnit, Time
 from typing import Literal
 from math import exp, pi
 
+from cheme_calculations.units.mass_transfer import DiffusionCoefficient
+
 __all__ = ["three_d_pulse_decay"]
 
-def three_d_pulse_decay(initial_mass: Mass, distance: Length, diffusion_coefficient: MultiUnit,
+def three_d_pulse_decay(initial_mass: Mass, distance: Length, diffusion_coefficient: DiffusionCoefficient,
                         time: Time, shape: Literal["cube", "hemisphere"])-> MultiUnit:
     """Calculates the concentration at a certain point away from a point source of concentration. 
     This function does so in a 3D manner where the stuff can diffuse in all directions

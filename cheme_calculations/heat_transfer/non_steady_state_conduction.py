@@ -36,7 +36,17 @@ def pseudo_steady_time(density: Density, heat_of_fusion: MultiUnit, k: ThermalCo
     
     :Example:
     
-    >>> 
+    >>> from cheme_calculations.heat_transfer import pseudo_steady_time
+    >>> d = Density(990, "kg/m^3")
+    >>> hf = MultiUnit(330, "J/kg")
+    >>> k = ThermalConductivity(0.6, "W/m*K")
+    >>> T_s = Temperature(323.15, "K")
+    >>> T_m = Temperature(273.15, "K")
+    >>> lo = Length(.01, "m")
+    >>> lf = Length(1, "m")
+    >>> time = pseudo_steady_time(d, hf, k, T_s, T_m, lo, lf)
+    >>> print(time)
+    >>> 5444.4555 s
     """
     term1 = (density*heat_of_fusion)/(k*(T_surface-T_melt))
     term2 = (final_length**2-initial_length**2)/2
@@ -68,8 +78,20 @@ def semi_infinite_slab_conduction(Ts: Temperature, To: Temperature, z: Length,
     
     :Example:
     
-    >>> 
+    >>> from cheme_calculations.heat_transfer import semi_infinite_slab_conduction
+    >>> Ts = Temperature(300, "F")
+    >>> To = Temperature(100, "F")
+    >>> z = Length(1, "ft")
+    >>> time = Time(5, "hr")
+    >>> rho = Density(78, "lb/ft^3")
+    >>> cp = Cp(1, "BTU/lb*F")
+    >>> k = ThermalConductivity(10, "BTU/hr*ft*F")
+    >>> T = semi_infinite_slab_conduction(Ts, To, z, time, rho, cp, k)
+    >>> print(T)
+    >>> 175.42822795740176 F
     """
+    
+    
     
     alpha = k/(rho*Cp)
     T = Ts - (Ts-To)*erf(z/((4*alpha*time)**(1/2)))
@@ -106,7 +128,18 @@ def lumped_parameter(Tf: Temperature, To: Temperature,
     
     :Example:
     
-    >>>
+    >>> from cheme_calculations.heat_transfer import lumped_parameter
+    >>> Tf = Temperature(400, "K")
+    >>> To = Temperature(300, "K")
+    >>> h = HeatTransferCoefficient(5, "W/m^2*K")
+    >>> A = Area(1, "m^2")
+    >>> rho = Density(800, "kg/m^3")
+    >>> cp = Cp(1, "J/kg*K")
+    >>> V = Volume(.5, "m^3")
+    >>> time = Time(100, "s")
+    >>> T = lumped_parameter(Tf, To, h, A, V, time)
+    >>> print(T)
+    >>> 371.349520313981 K
     """
     
     T = Tf-(Tf-To)*exp(-(h*A*time)/(rho*cP*V))
@@ -138,7 +171,17 @@ def finite_slab_conduction(Ts: Temperature, To: Temperature,
     
     :Example:
     
-    >>> 
+    >>> rho = Density(1050, "kg/m^3")
+    >>> cp = Cp(800, "J/kg*K")
+    >>> k = ThermalConductivity(1.8, "W/m*K")
+    >>> time = Time(180, "s")
+    >>> Ts = Temperature(30, "C").convert_to("K")
+    >>> To = Temperature(90, "C").convert_to("K")
+    >>> s = Length(.04, "m")
+    >>> z = Length(.02, "m")
+    >>> T = finite_slab_conduction(Ts, To, z, s, k, rho, cp, time, 100).convert_to("C")
+    >>> print(T)
+    >>> 59.885417513377774 C
     """
     alpha = k/(rho*Cp)
     right_side = 0
