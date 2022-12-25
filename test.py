@@ -62,9 +62,9 @@ k = ThermalConductivity(0.6, "kW/m*K")
 
 #ans = planar_flux(k, T1, T2, x)
 
-w = get_water_properties(275)
+w = get_water_properties(300)
 
-print(w._density)
+print(w._viscosity.convert_to("Pa*s"))
 
 
 

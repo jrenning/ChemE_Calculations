@@ -22,11 +22,12 @@ class UnknownPrefix(Exception):
     pass
 
 
-# milli. centi, deci, kilo, mega
-prefixes = ["m", "c", "d", "k", "M"]
+# micro, milli, centi, deci, kilo, mega
+prefixes = ["u", "m", "c", "d", "k", "M"]
 
 # factors relative to no prefix 
 prefix_factors = {
+    "u": 1E-6,
     "m": .001,
     "c": .01,
     "d": .1,
@@ -1150,6 +1151,7 @@ class Pressure(Unit):
     standard: str = "Pa"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "uPa": lambda x: (x/1E6),
         "mPa": lambda x: (x/1000),
         "dPa": lambda x: (x/10),
         "kPa": lambda x: (x*1000),
@@ -1161,6 +1163,7 @@ class Pressure(Unit):
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "uPa": lambda x: x*1E6,
         "mPa": lambda x: (x*1000),
         "dPa": lambda x: (x*10),
         "kPa": lambda x: (x/1000),
@@ -1182,6 +1185,7 @@ class Length(Unit):
     to_standard_conversions = {
         "in": lambda x: (x/12)*0.3048,
         "ft": lambda x: x*0.3048,
+        "um": lambda x: x/1E6,
         "mm": lambda x: x/1000,
         "cm": lambda x: x/100,
         "dm": lambda x: x/10,
@@ -1191,6 +1195,7 @@ class Length(Unit):
     from_standard_conversions = {
         "in": lambda x: (x*12) * 3.28084,
         "ft": lambda x: x*3.28084,
+        "um": lambda x: x*1E6,
         "mm": lambda x: x*1000,
         "cm": lambda x: x*100,
         "dm": lambda x: x*10,
@@ -1223,6 +1228,7 @@ class Energy(Unit):
     standard: str = "J"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "uJ": lambda x: x/1E6,
         "mJ": lambda x: x/1000,
         "cJ": lambda x: x/100,
         "dJ": lambda x: x/10,
@@ -1232,6 +1238,7 @@ class Energy(Unit):
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "uJ": lambda x: x*1E6,
         "mJ": lambda x: x*1000,
         "cJ": lambda x: x*100,
         "dJ": lambda x: x*10,
@@ -1247,6 +1254,7 @@ class Mass(Unit):
     standard: str = "kg"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "ug": lambda x: x/1E9,
         "mg": lambda x: x/1E6,
         "dg": lambda x: x/10000,
         "g": lambda x: x/1000,
@@ -1255,6 +1263,7 @@ class Mass(Unit):
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        'ug': lambda x: x*1E9,
         "mg": lambda x: x*1E6,
         "dg": lambda x: x*10000,
         "g": lambda x: x*1000,
@@ -1279,6 +1288,7 @@ class Force(Unit):
     standard: str = "N"
     # from target unit to standard unit 
     to_standard_conversions = {
+        "uN": lambda x: x/1E6,
         "mN": lambda x: x/1000,
         "dN": lambda x: x/10,
         "kN": lambda x: x*1000,
@@ -1287,6 +1297,7 @@ class Force(Unit):
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "uN": lambda x: x*1E6,
         "mN": lambda x: x*1000,
         "dN": lambda x: x*10,
         "kN": lambda x: x/1000,
@@ -1307,6 +1318,7 @@ class Volume(Unit):
     # ie actual L conversion is by a factor of 10 * 10 * 10
     to_standard_conversions = {
         "L": lambda x: x/10,
+        "um^3": lambda x: x/(1E6),
         "mm^3": lambda x: x/(1000),
         "cm^3": lambda x: x/(100),
         "dm^3": lambda x: x/(10),
@@ -1317,6 +1329,7 @@ class Volume(Unit):
     # form standard unit to the target unit 
     from_standard_conversions = {
         "L": lambda x: x*10,
+        "um^3": lambda x: x*1E6,
         "mm^3": lambda x: x*(1000),
         "cm^3": lambda x: x*(100),
         "dm^3": lambda x: x*(10),

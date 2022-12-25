@@ -3,6 +3,8 @@ from cheme_calculations.units.property_units import Cp, Density, DynamicViscosit
 from cheme_calculations.units.units import Length
 from cheme_calculations.heat_transfer.unit_types import HeatTransferCoefficient, ThermalConductivity
 
+__all__ = ["reynolds", "biot", "prandtl", "schmidt"]
+
 def reynolds(rho: Density, v: Velocity, L: Length, mu: DynamicViscosity)-> float:
     """Calculates the reynolds number for a fluid
 
