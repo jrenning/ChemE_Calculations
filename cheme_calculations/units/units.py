@@ -92,7 +92,9 @@ DECONSTRUCTABLE_UNITS = {
     "J": "kg*m^2/s^2",
     "W": "J/s",
     "psi": "lbf/in^2",
-    "cP": "g/m*s"
+    "cP": "g/m*s",
+    "C": "A*s",
+    "V": "kg*m^2/s^3*A"
 }
 
 UNIT_SIMPLIFICATIONS = {

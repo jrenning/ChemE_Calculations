@@ -1,10 +1,9 @@
-from math import exp, pi, sin
+
 from cheme_calculations.heat_transfer.non_steady_state_conduction import lumped_parameter
-from cheme_calculations.units.units import Length, MultiUnit, Temperature, Time, Volume
-import pytest
-from cheme_calculations.units.property_units import Area, Cp, Density
-from cheme_calculations.heat_transfer.unit_types import HeatTransferCoefficient, ThermalConductivity
+from cheme_calculations.units import Area, Cp, Density, ThermalConductivity, HeatTransferCoefficient, Length, MultiUnit, Temperature, Time, Volume, Power
 from cheme_calculations.heat_transfer import finite_slab_conduction
+from cheme_calculations.heat_transfer import radiative_heat_flow
+import pytest
 from pytest import approx
 
 def test_planar_finite_conduction():
@@ -39,4 +38,13 @@ def test_lumped_parameter():
     T = lumped_parameter(Tf, To, h, A, rho, cp, V, time).convert_to("C")
     
     assert(T == Temperature(approx(33.2, rel=0.2), "C"))
+
+def test_radiative_heat_flow():
+    T1 = Temperature(1600, "K")
+    T2 = Temperature(400, "K")
+    view_factor = 1
+    area = Area(1, "m^2")
     
+    ans = radiative_heat_flow(area, view_factor, T1, T2)
+    
+    assert(ans == Power(370137.6, "W"))

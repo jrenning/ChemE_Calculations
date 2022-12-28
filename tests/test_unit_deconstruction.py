@@ -1,5 +1,5 @@
 from typing import List
-from cheme_calculations.heat_transfer.unit_types import Power
+from cheme_calculations.units import Power
 from cheme_calculations.units.units import BaseUnit
 import pytest
 from cheme_calculations.units import Pressure, MultiUnit, Time, Unit

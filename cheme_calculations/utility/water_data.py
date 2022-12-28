@@ -15,6 +15,12 @@
 #     pprint(water_dict)
     
 # indexed by temperature in Kelvin
+
+WATER_PROPERTY_KEYS = ['Pressure (MPa)', 'Cp (J/g*K)', 'Cv (J/g*K)', 'Density (kg/m3)','Enthalpy (kJ/kg)', 'Entropy (J/g*K)',
+                         'Internal Energy (kJ/kg)', 'Phase', "Therm. Cond. (W/m*K)", 'Viscosity (uPa*s)',
+                         'Volume (m3/kg)']
+
+
 # found here https://webbook.nist.gov
 WATER_PROPERTIES = {275.0: {'Cp (J/g*K)': 4.2135,
          'Cv (J/g*K)': 4.2128,

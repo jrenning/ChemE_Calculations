@@ -1,9 +1,10 @@
+from xmlrpc.client import MultiCall
 from cheme_calculations.units.mass_transfer import DiffusionCoefficient
-from cheme_calculations.units.property_units import Cp, Density, DynamicViscosity, Velocity
-from cheme_calculations.units.units import Length
+from cheme_calculations.units.property_units import Cp, Density, DynamicViscosity, Gravity, Velocity
+from cheme_calculations.units.units import Length, Temperature
 from cheme_calculations.units.heat_transfer import ThermalConductivity, HeatTransferCoefficient
 
-__all__ = ["reynolds", "biot", "prandtl", "schmidt"]
+__all__ = ["reynolds", "biot", "prandtl", "schmidt", "gretz", "grashof"]
 
 def reynolds(rho: Density, v: Velocity, L: Length, mu: DynamicViscosity)-> float:
     """Calculates the reynolds number for a fluid
@@ -65,3 +66,68 @@ def schmidt(mu: DynamicViscosity, rho: Density, D: DiffusionCoefficient)-> float
     :rtype: float
     """
     return mu/(rho*D)
+
+
+def gretz(diameter: Length, length: Length, cp: Cp, characteristic_length: Length, rho: Density, 
+          characteristic_speed: Velocity, k: ThermalConductivity)-> float:
+    """Calculates the Gretz number. Useful for characterization of laminar flow in heat and mass transfer.
+    Only used in a pipe scenario.
+
+    :param diameter: Diameter of the pipe 
+    :type diameter: Length
+    :param length: Length of the pipe
+    :type length: Length
+    :param cp: Heat capacity of the fluid in the pipe
+    :type cp: Cp
+    :param characteristic_length: Characteristic length of the pipe (ie diameter for regular pipes, 4*hydraulic radius for annulus)
+    :type characteristic_length: Length
+    :param rho: Density of the fluid in the pipe
+    :type rho: Density
+    :param characteristic_speed: Characteristic speed of the fluid
+    :type characteristic_speed: Velocity
+    :param k: Thermal conductivity of the fluid in the pipe
+    :type k: ThermalConductivity
+    :return: The Gretz number
+    :rtype: float
+    """
+    
+    return (cp*diameter*characteristic_length*rho*characteristic_speed)/(k*length)
+
+def grashof(g: Gravity, beta: Temperature, T2: Temperature, T1: Temperature, L: Length, 
+            rho: Density, mu: DynamicViscosity)-> float:
+    """_summary_
+
+    :param g: The gravity in the system
+    :type g: Gravity
+    :param beta: The beta value for the system, units of 1/temperature
+    :type beta: Temperature
+    :param T2: Hotter temperature
+    :type T2: Temperature
+    :param T1: Cooler temperature
+    :type T1: Temperature
+    :param L: Characteristic length of the system (ie diameter for pipe flow)
+    :type L: Length
+    :param rho: Density of the fluid in the system
+    :type rho: Density
+    :param mu: Viscosity of the fluid in the system
+    :type mu: DynamicViscosity
+    :return: The Grashof number
+    :rtype: float
+    
+    :Example:
+    
+    >>> from cheme_calculations.utility import grashof
+    >>> g = Gravity(9.81, "m/s^2")
+    >>> beta = Temperature(.0015, "K", -1)
+    >>> T2 = Temperature(300, "K")
+    >>> T1 = Temperature(275, "K")
+    >>> L = Length(1, "m")
+    >>> rho = get_water_properties(275)._density
+    >>> mu = get_water_properties(275)._viscosity.convert_to("kg/m*s")
+    >>> gr = grashof(g, beta, T2, T1, L, rho, mu)
+    >>> print(gr)
+    >>> 130031273830.54044
+    
+    """
+    
+    return (L**3*rho**2*beta*(T2-T1)*g)/(mu**2)
