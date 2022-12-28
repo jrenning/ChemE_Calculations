@@ -14,6 +14,8 @@ def planar_heat(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[
                 A: Area, thickness: Union[Length, None], q: Power = None, **kwargs)-> Union[Power, Temperature, Length]:
     """Function to solve the heat flow through a planar surface at steady state
     
+    .. math:: q = -k * A * \dfrac{T2-T1}{thickness}
+    
     Can solve for other parameters as long as there is only one unknown
     
     Supply [k, T1, T2, A, thickness] -> q (Power) \n
@@ -77,6 +79,8 @@ def planar_flux(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[
     
     Can solve for other parameters as long as there is only one unknown
     
+    .. math:: \dfrac{q}{A} = -k* \dfrac{T2-T1}{thickness}
+    
     Supply [k, T1, T2, thickness] -> qA (HeatFlux) \n
     Supply [k, T1, T2, qA] -> thickness (Length) \n
     Supply [k, T2, thickness, qA] -> T1 (Temperature) \n
@@ -130,8 +134,10 @@ def planar_flux(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[
         return T1
 
 def pipe_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,
-                length: Length, thickness: Length)-> Power:
+                length: Length, r2: Length, r1: Length)-> Power:
     """Calculates the heat transfer through a pipe at steady state
+    
+    .. math:: q = -2*\pi*L*k* \dfrac{T2-T1}{ln(\dfrac{r2}{r1})}
 
     :param k: Thermal conductivity of the pipe
     :type k: ThermalConductivity
@@ -141,8 +147,10 @@ def pipe_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,
     :type T2: Temperature
     :param length: Length of the pipe
     :type length: Length
-    :param thickness: Thickness of the pipe
-    :type thickness: Length
+    :param r2: Outer radius of the pipe
+    :type r2: Length
+    :param r1: Inner radius of the pipe
+    :type r1: Length
     :return: Heat transfer through the pipe
     :rtype: Power
     
@@ -151,7 +159,7 @@ def pipe_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,
     >>>
     """
     
-    q = -2*pi*length*k*((T2-T1)/(math.log(thickness._value)))
+    q = -2*pi*length*k*((T2-T1)/(math.log(r2/r1)))
     return q
 
 def sphere_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,

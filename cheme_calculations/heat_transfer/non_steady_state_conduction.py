@@ -4,8 +4,10 @@ from cheme_calculations.units import MultiUnit, Temperature, Length, Time, Volum
 from cheme_calculations.units.heat_transfer import HeatTransferCoefficient, ThermalConductivity
 from math import erf, exp, pi, sin, sqrt
 
+from cheme_calculations.units.units import Energy
+
 __all__ = ["pseudo_steady_time", "semi_infinite_slab_conduction",
-           "lumped_parameter", "finite_slab_conduction"]
+           "lumped_parameter", "finite_slab_conduction", "finite_slab_total_heat"]
 
 
 
@@ -158,7 +160,7 @@ def finite_slab_conduction(Ts: Temperature, To: Temperature,
     :type To: Temperature
     :param x: distance from measuring point to the no flux line
     :type x: Length
-    :param s: distance to no flux line from surface_
+    :param s: distance to no flux line from surface
     :type s: Length
     :param k: Thermal conductivity value 
     :type k: ThermalConductivity
@@ -195,7 +197,61 @@ def finite_slab_conduction(Ts: Temperature, To: Temperature,
     return T
         
     
+def finite_slab_total_heat(s: Length, rho: Density, cp: Cp, Ts: Temperature,
+                           To: Temperature, k: ThermalConductivity, time: Time, area: Area, iterations: int=10)-> Energy:
+    """Calculates the total heat that has been transferred through a slab in a given time period.
+    Uses an iterative formula.
+
+    :param s: Distance to the no flux line
+    :type s: Length
+    :param rho: Density of the material
+    :type rho: Density
+    :param cp: Heat capacity of the material
+    :type cp: Cp
+    :param Ts: Surface temperature of the thing heating the material
+    :type Ts: Temperature
+    :param To: Initial temperature of the material at time = 0
+    :type To: Temperature
+    :param k: Thermal conductivity of the slab
+    :type k: ThermalConductivity
+    :param time: Time since conduction has started
+    :type time: Time
+    :param arae: ARea conduction occurred in 
+    :type area: Area
+    :param iterations: _description_
+    :type iterations: int
+    :return: _description_
+    :rtype: Energy
     
+    :Example:
+    
+    >>> from cheme_calculations.heat_transfer import finite_slab_total_heat
+    >>> s = Length(1, "m")
+    >>> rho = Density(1000, "kg/m^3")
+    >>> cp = Cp(4.18, "kJ/kg*K")
+    >>> Ts = Temperature(400, "K")
+    >>> To = Temperature(300, "K")
+    >>> k = ThermalConductivity(0.6, "W/m*K")
+    >>> time = Time(300, "s")
+    >>> area = Area(1, "m^2")
+    >>> ans = finite_slab_total_heat
+    >>> print(ans)
+    >>> 357477.6685683244 J
+    
+    
+    """
+    
+    left_side = (8*s*rho*cp*(Ts-To)*area)/(pi**2)
+    alpha = k/(rho*cp)
+    right_side = 0
+    
+    for n in range(iterations):
+        right_side += (1/(2*n+1)**2)*(1-exp(-((2*n+1)*(pi/2))**2 * ((alpha*time)/s**2)))
+        
+    return left_side*right_side
+    
+    
+      
 
 
     
