@@ -1,7 +1,7 @@
 from turtle import left
 from cheme_calculations.units.property_units import Area, Density, Cp
 from cheme_calculations.units import MultiUnit, Temperature, Length, Time, Volume
-from .unit_types import HeatTransferCoefficient, ThermalConductivity
+from cheme_calculations.units.heat_transfer import HeatTransferCoefficient, ThermalConductivity
 from math import erf, exp, pi, sin, sqrt
 
 __all__ = ["pseudo_steady_time", "semi_infinite_slab_conduction",

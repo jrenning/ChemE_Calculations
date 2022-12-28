@@ -3,8 +3,7 @@ from pprint import pprint
 from typing import Any, Literal, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
-from cheme_calculations.utility import to_sup, get_prefix
-from cheme_calculations.utility.utility import remove_zero
+from ._utility import remove_zero, to_sup, get_prefix
 
 
 

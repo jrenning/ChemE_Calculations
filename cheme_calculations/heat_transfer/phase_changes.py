@@ -1,7 +1,7 @@
 from cheme_calculations.units import Temperature, Length
 from cheme_calculations.units.property_units import Density, DynamicViscosity, Gravity, Hvap
 from cheme_calculations.units.units import MultiUnit
-from .unit_types import HeatFlux, HeatTransferCoefficient, ThermalConductivity
+from cheme_calculations.units.heat_transfer import HeatFlux, HeatTransferCoefficient, ThermalConductivity
 
 __all__ = ['condensation_transfer_coefficient', "flux_max_boiling"]
 

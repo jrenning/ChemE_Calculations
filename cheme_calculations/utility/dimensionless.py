@@ -1,7 +1,7 @@
 from cheme_calculations.units.mass_transfer import DiffusionCoefficient
 from cheme_calculations.units.property_units import Cp, Density, DynamicViscosity, Velocity
 from cheme_calculations.units.units import Length
-from cheme_calculations.heat_transfer.unit_types import HeatTransferCoefficient, ThermalConductivity
+from cheme_calculations.units.heat_transfer import ThermalConductivity, HeatTransferCoefficient
 
 __all__ = ["reynolds", "biot", "prandtl", "schmidt"]
 
@@ -19,7 +19,7 @@ def reynolds(rho: Density, v: Velocity, L: Length, mu: DynamicViscosity)-> float
     :return: The Reynolds number
     :rtype: float
     """
-    return (rho*v*d)/mu
+    return (rho*v*L)/mu
 
 def biot(h: HeatTransferCoefficient, L: Length, k: ThermalConductivity)-> float:
     """Calculates the Biot number for a given system. Useful for determining if 
