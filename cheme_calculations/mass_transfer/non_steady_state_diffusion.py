@@ -48,7 +48,7 @@ def finite_slab_diffusion(Cs: Concentration, Co: Concentration, a: Length,
     """Finds the concentration at a point z into a slab after time t. This 
     function uses a finite slab model.
     
-    .. math:: C = C_s - (C_s - C_o)* \sum_{n=0}^\inf (-1)^n [erfc(\dfrac{(2n+1)a+z}{\sqrt{4Dt}})+ erfc(\dfrac{(2n+1)a-z}{\sqrt(4Dt)})]
+    .. math:: C = C_s - (C_s - C_o)* \sum_{n=0}^\inf (-1)^n [erfc(\dfrac{(2n+1)a+z}{\sqrt{4Dt}})+ erfc(\dfrac{(2n+1)a-z}{\sqrt{4Dt}})]
 
     :param Cs: Surface concentration on the slab
     :type Cs: Concentration

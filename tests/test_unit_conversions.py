@@ -19,7 +19,8 @@ from pytest import approx
                                                         (MultiUnit(100, "W/m^2"), "kg/s^3", MultiUnit(100, "kg/s^3")),
                                                         (MultiUnit(100, "W/m^2*K"), "kg/s^3*K", MultiUnit(100, "kg/s^3*K")),
                                                         (MultiUnit(1, "kW/m"), "W/m", MultiUnit(1000, "W/m")),
-                                                        (MultiUnit(1000, "mPa*m/kg"), "Pa*m/kg", MultiUnit(1, "Pa*m/kg"))
+                                                        (MultiUnit(1000, "mPa*m/kg"), "Pa*m/kg", MultiUnit(1, "Pa*m/kg")),
+                                                        (MultiUnit(1, "kg/mol"), "g/mol", MultiUnit(1000, "g/mol")),
                                                         ])
 def test_multi_unit_conversion(unit1, unit2, expected):
     a = unit1.convert_to(unit2)

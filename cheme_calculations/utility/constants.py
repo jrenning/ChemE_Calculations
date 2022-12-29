@@ -2,7 +2,10 @@ from typing import Literal
 from cheme_calculations.units import MultiUnit
 from cheme_calculations.units.units import Unit
 
-__all__ = ["getR_constant"]
+__all__ = ["get_gas_constant", "BOLTZMANS_CONSTANT",
+           "AVAGADROS_CONSTANT", "PLANCKS_CONSTANT",
+           "RADIATION_CONSTANT", "FARADAYS_CONSTANT"]
+
 
 
 BOLTZMANS_CONSTANT = MultiUnit(1.380649E-23, "m^2*kg/s^2*K")
@@ -11,9 +14,9 @@ PLANCKS_CONSTANT = MultiUnit(6.62607015E-34, "m^2*kg/s")
 RADIATION_CONSTANT = MultiUnit(5.670E-8, "W/m^2*K^4")
 FARADAYS_CONSTANT = MultiUnit(96500, "C/mol")
 
-def getR_constant(temperature_units: Literal["K", "C", "F", "R"],
-                  volume_units: Literal["cm^3", "m^3", "L"],
-                  pressure_units: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"],
+def get_gas_constant(temperature_units: Literal["K", "C", "F", "R"]="K",
+                  volume_units: Literal["cm^3", "m^3", "L"]="m^3",
+                  pressure_units: Literal["Pa", "kPa", "bar", "atm", "mmHg", "torr"]="Pa",
                   generic=False):
     if generic:
         return MultiUnit(8.314, "J/mol*K")

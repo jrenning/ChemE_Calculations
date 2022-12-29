@@ -11,7 +11,7 @@ def planar_mass_transfer_steady_state(D: DiffusionCoefficient, A: Area, C2: Conc
                 C1: Concentration, thickness: Length)-> MultiUnit:
     """Calculates a mass transfer rate for a planar system at steady state.
     
-    .. math:: JA = -DA \dfrac{C2-C1}{thickness}
+    .. math:: JA = -DA \dfrac{C_2-C_1}{thickness}
 
     :param D: Diffusion coefficient for the system
     :type D: DiffusionCoefficient
@@ -55,7 +55,7 @@ def pipe_mass_transfer_steady_state(D: DiffusionCoefficient, r2: Length, r1: Len
                 C1: Concentration, L: Length)-> MultiUnit:
     """Calculates the steady state mass transfer rate at steady state in a pipe.
     
-    .. math:: JA = -2\piLD * \dfrac{C2-C1}{ln(\dfrac{r2}{r1})}
+    .. math:: JA = -2 \pi L D * \dfrac{C_2-C_1}{ln(\dfrac{r_2}{r_2})}
 
     :param D: Diffusion coefficient for the material
     :type D: DiffusionCoefficient
@@ -97,7 +97,7 @@ def sphere_mass_transfer_steady_state(D: DiffusionCoefficient, r2: Length, r1: L
                 C1: Concentration)-> MultiUnit:
     """Calculates the steady state mass transfer in a sphere at steady state.
     
-    .. math:: JA = -4*\pi*r1*r2*D* \dfrac{C2-C1}{r2-r1}
+    .. math:: JA = -4 \pi r_1 r_2 D* \dfrac{C_2-C_1}{r_2-r_1}
 
     :param D: Diffusion coefficient for the material
     :type D: DiffusionCoefficient

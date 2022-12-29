@@ -137,7 +137,7 @@ def pipe_heat(k: ThermalConductivity, T1: Temperature, T2: Temperature,
                 length: Length, r2: Length, r1: Length)-> Power:
     """Calculates the heat transfer through a pipe at steady state
     
-    .. math:: q = -2*\pi*L*k* \dfrac{T2-T1}{ln(\dfrac{r2}{r1})}
+    .. math:: q = -2*\pi*L*k* \dfrac{T2-T1}{ln(\dfrac{r_2}{r_1})}
 
     :param k: Thermal conductivity of the pipe
     :type k: ThermalConductivity

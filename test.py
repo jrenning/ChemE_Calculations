@@ -33,15 +33,6 @@ mu = MultiUnit(0.0007563, "kg/m*s")
 k = ThermalConductivity(0.6, "kW/m*K")
 
 
-from cheme_calculations.mass_transfer import finite_slab_diffusion
-Cs = Concentration(1, "kg/m^3")
-Co = Concentration(.2, "kg/m^3")
-a = Length(1, "m")
-z = Length(0, "m")
-D = DiffusionCoefficient(.05, "m^2/s")
-t = Time(30000, "s")
-ans = finite_slab_diffusion(Cs, Co, a, z, D, t)
-print(ans)
 
 
 

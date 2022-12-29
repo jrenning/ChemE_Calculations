@@ -72,6 +72,9 @@ VolumeUnits = ["m^3"]
 VolumeUnits = [f"{x}{y}" for x in prefixes for y in VolumeUnits]
 VolumeUnits.extend(["m^3", "ft^3", "L", "in^3"])
 VolumeDict = {k: "Volume" for k in VolumeUnits}
+
+AmountUnits = ["mol"]
+AmountDict = {"mol": "Amount"}
 # registers units to type of unit it is 
 UNIT_REGISTRY = {
     **TemperatureDict,
@@ -83,6 +86,7 @@ UNIT_REGISTRY = {
     **PressureDict,
     **ForceDict,
     **VolumeDict,
+    **AmountDict,
 }
 
 LengthUnit = Literal["m", "ft"]
@@ -739,6 +743,8 @@ class MultiUnit:
                 return Temperature
             case "Current":
                 return Current
+            case "Amount":
+                return Amount
             case "Energy":
                 return Energy
             case "Pressure":
@@ -1064,12 +1070,12 @@ class MultiUnit:
             
             #if just left with one unit in top
             if len(final_top_half) == 1 and len(final_bottom_half) == 0:
-                return Unit(self._value / other._value, final_top_half[0]._unit, final_top_half[0]._exponent)
+                return Unit(other._value / self._value, final_top_half[0]._unit, final_top_half[0]._exponent)
             # one unit in the bottom
             if len(final_top_half) == 0 and len(final_bottom_half) == 1:
-                return Unit(self._value / other._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
+                return Unit(other._value / self._value, final_bottom_half[0]._unit, -final_bottom_half[0]._exponent)
                             
-            return MultiUnit(self._value / other._value, top_half=final_top_half, bottom_half=final_bottom_half)
+            return MultiUnit(other._value / self._value, top_half=final_top_half, bottom_half=final_bottom_half)
             
         
         else:
@@ -1275,7 +1281,15 @@ class Current(Unit):
     def __init__(self,value:float, unit: Literal["A"],
                 exponent: int = 1):
         if unit not in CurrentUnits:
-            raise TypeError(f"The unit of {unit} is not valid for temperature")
+            raise TypeError(f"The unit of {unit} is not valid for current")
+        super().__init__(value, unit, exponent)
+        
+class Amount(Unit):
+    standard: str = "mol"
+    def __init__(self,value:float, unit: Literal["mol"],
+                exponent: int = 1):
+        if unit not in AmountUnits:
+            raise TypeError(f"The unit of {unit} is not valid for an amount")
         super().__init__(value, unit, exponent)
 
     
