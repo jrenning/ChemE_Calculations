@@ -4,6 +4,7 @@ from cheme_calculations.heat_transfer.phase_changes import flux_max_boiling
 from cheme_calculations.heat_transfer.radiation import radiative_heat_flow
 from cheme_calculations.heat_transfer.steady_state_conduction import planar_flux
 from cheme_calculations.units import Temperature, Length, Time, ThermalConductivity, HeatTransferCoefficient
+from cheme_calculations.units.mass_transfer import Concentration, DiffusionCoefficient
 from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, Velocity 
 from cheme_calculations.units.units import BaseUnit, Mass, MultiUnit, Pressure, Volume
 
@@ -31,14 +32,10 @@ hvap = Hvap(2250000, "J/kg")
 mu = MultiUnit(0.0007563, "kg/m*s")
 k = ThermalConductivity(0.6, "kW/m*K")
 
-from cheme_calculations.heat_transfer import finite_slab_total_heat
-from tests.standard_values import std
 
-ans = finite_slab_total_heat(std.Length, std.Density, std.Cp, Temperature(400, "K"), 
-                             Temperature(300, "K"), ThermalConductivity(0.6, "W/m*K"), 
-                             Time(300, "s"), Area(1, "m^2"))
 
-print(ans)
+
+
 
 
 

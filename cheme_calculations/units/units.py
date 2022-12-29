@@ -628,33 +628,27 @@ class MultiUnit:
                 
                 
                 # # check exponents (now that we know a match may exist)
-                exp_match = False
+                exp_match = True
                 for u1 in top_base_units:
                     for u2 in top_list:
                         if u1._unit == u2._unit:
                             # units should be combined at this point so 
                             # each unit should exist only once in a top list / bottom list
                             if u2._exponent < u1._exponent:
-                                break
-                # if no break              
-                else:
-                    exp_match = True
+                                exp_match = False
                     
                             # if no match try next unit
                 if not exp_match:
                     continue
                 
-                exp_match = False
+                exp_match = True
                 for u1 in bottom_base_units:
                     for u2 in bottom_list:
                         if u1._unit == u2._unit:
                             # units should be combined at this point so 
                             # each unit should exist only once in a top list / bottom list
                             if u2._exponent < u1._exponent:
-                                break
-                # if no break              
-                else:
-                    exp_match = True
+                                exp_match = False
                 
                 # if no match try next unit
                 if not exp_match:

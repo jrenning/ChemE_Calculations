@@ -36,7 +36,8 @@ def test_unit_subtraction(operand1, operand2, expected):
 
 @pytest.mark.parametrize("operand1,operand2,expected", [(Temperature(350, 'K'),2,Temperature(700, 'K')),
                                                         (Temperature(350, 'K'), Temperature(2, 'K'), Temperature(700, 'K', 2)),
-                                                        (MultiUnit(350, "J/s"), Unit(1, "s"), Unit(350, "J"))])
+                                                        (MultiUnit(350, "J/s"), Unit(1, "s"), Unit(350, "J")),
+                                                        (MultiUnit(1, "kg/m^3"), MultiUnit(1, "m^2/s"), MultiUnit(1, "kg/m*s"))])
 def test_unit_multiplication(operand1, operand2, expected):
     assert(operand1 * operand2 == expected)
 

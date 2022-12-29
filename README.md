@@ -4,7 +4,7 @@ This repository contains the code for the Python package cheme_calculations
 
 ## Docs
 
-[The Docs](https://cheme-calculations.readthedocs.io/en/latest/)\
+[The Docs](https://cheme-calculations.readthedocs.io/en/latest/)
 
 ## Goals
 
