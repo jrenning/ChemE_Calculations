@@ -910,7 +910,7 @@ class MultiUnit:
         else:
             raise TypeError(f"Adding class {self.__class__} and {other.__class__} is unsupported")
     def __sub__(self, other):
-        if self.__class__ == other.__class__:
+        if other.__class__ == MultiUnit or other.__class__.__bases__[0] == MultiUnit:
             if self._top_half == other._top_half and self._bottom_half == other._bottom_half:
                 return MultiUnit(value= self._value - other._value, top_half=self._top_half, bottom_half=self._bottom_half)
             else:
