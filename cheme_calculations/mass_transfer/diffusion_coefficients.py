@@ -91,7 +91,7 @@ def ionic_diffusion_coefficient(R: MultiUnit, T: Temperature, n_plus: int, n_min
                                 lambda_plus: MultiUnit, lambda_minus: MultiUnit)-> DiffusionCoefficient:
     """Calculates a diffusion coefficient for a dissociated ionic species in a solvent.
     
-    .. math:: \dfrac{RT*[(1/n_+)+(1/n_-)]}{F^2*[(1/ \lambda_+)+(1/ \lambda_-)]}
+    .. math:: D = \dfrac{RT*[(1/n_+)+(1/n_-)]}{F^2*[(1/ \lambda_+)+(1/ \lambda_-)]}
 
     :param R: Gas constant
     :type R: MultiUnit
