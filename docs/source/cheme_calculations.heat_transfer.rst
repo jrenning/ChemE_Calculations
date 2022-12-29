@@ -28,18 +28,18 @@ cheme\_calculations.heat\_transfer.phase\_changes module
    :undoc-members:
    :show-inheritance:
 
-cheme\_calculations.heat\_transfer.steady\_state\_conduction module
--------------------------------------------------------------------
+cheme\_calculations.heat\_transfer.radiation module
+---------------------------------------------------
 
-.. automodule:: cheme_calculations.heat_transfer.steady_state_conduction
+.. automodule:: cheme_calculations.heat_transfer.radiation
    :members:
    :undoc-members:
    :show-inheritance:
 
-cheme\_calculations.heat\_transfer.unit\_types module
------------------------------------------------------
+cheme\_calculations.heat\_transfer.steady\_state\_conduction module
+-------------------------------------------------------------------
 
-.. automodule:: cheme_calculations.heat_transfer.unit_types
+.. automodule:: cheme_calculations.heat_transfer.steady_state_conduction
    :members:
    :undoc-members:
    :show-inheritance:

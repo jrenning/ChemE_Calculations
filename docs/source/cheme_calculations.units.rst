@@ -4,6 +4,22 @@ cheme\_calculations.units package
 Submodules
 ----------
 
+cheme\_calculations.units.heat\_transfer module
+-----------------------------------------------
+
+.. automodule:: cheme_calculations.units.heat_transfer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+cheme\_calculations.units.mass\_transfer module
+-----------------------------------------------
+
+.. automodule:: cheme_calculations.units.mass_transfer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 cheme\_calculations.units.property\_units module
 ------------------------------------------------
 

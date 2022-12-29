@@ -20,10 +20,18 @@ cheme\_calculations.mass\_transfer.diffusion\_scenarios module
    :undoc-members:
    :show-inheritance:
 
-cheme\_calculations.mass\_transfer.unit\_types module
------------------------------------------------------
+cheme\_calculations.mass\_transfer.non\_steady\_state\_diffusion module
+-----------------------------------------------------------------------
 
-.. automodule:: cheme_calculations.mass_transfer.unit_types
+.. automodule:: cheme_calculations.mass_transfer.non_steady_state_diffusion
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+cheme\_calculations.mass\_transfer.steady\_state\_diffusion module
+------------------------------------------------------------------
+
+.. automodule:: cheme_calculations.mass_transfer.steady_state_diffusion
    :members:
    :undoc-members:
    :show-inheritance:
