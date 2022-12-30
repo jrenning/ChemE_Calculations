@@ -1,6 +1,6 @@
 from math import floor
 from pprint import pprint
-from typing import Any, Literal, TypeVar, Generic, Union, List
+from typing import Any, Callable, Literal, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
 from ._utility import remove_zero, to_sup, get_prefix
@@ -10,7 +10,7 @@ from ._utility import remove_zero, to_sup, get_prefix
 
 __all__ = ["Unit", "MultiUnit", "BaseUnit", "Temperature", "Pressure", 
            "Mass", "Current", "Energy", "Time", "Length","Volume",  "UNIT_REGISTRY",
-           "LengthUnits"]
+           "LengthUnits", "register_unit_from_existing"]
 
 T = TypeVar('T')
 
@@ -89,7 +89,7 @@ UNIT_REGISTRY = {
     **AmountDict,
 }
 
-LengthUnit = Literal["m", "ft"]
+
 
 DECONSTRUCTABLE_UNITS = {
     "Pa": "kg/m*s^2",
@@ -103,11 +103,27 @@ DECONSTRUCTABLE_UNITS = {
 
 UNIT_SIMPLIFICATIONS = {
     "kg/s^3*K": "W/m^2*K",
+    "kg/K*s^3": "W/m^2*K",
     "kg/s^3": "W/m^2",
 }
 
 UNIT_COMPOSITES = ["L"]
 
+def register_unit_from_existing(new_unit:str, existing_unit:str, to_func: Callable, from_func: Callable):
+    unit_class = MultiUnit.get_unit_class(existing_unit)
+    
+    if existing_unit != unit_class.standard:
+        existing_to_standard = unit_class.to_standard_conversions[existing_unit]
+        existing_from_standard = unit_class.from_standard_conversions[existing_unit]
+        new_to_standard = lambda x: existing_to_standard(to_func(x))
+        new_from_standard = lambda x: existing_from_standard(from_func(x))
+    else:
+        new_to_standard = to_func
+        new_from_standard = from_func
+    
+    # update standards
+    unit_class.to_standard_conversions[new_unit] = new_to_standard
+    unit_class.from_standard_conversions[new_unit] = new_from_standard
 
  
 class Unit:
@@ -732,29 +748,33 @@ class MultiUnit:
             unit_class = UNIT_REGISTRY[unit]
         except KeyError as _:
             raise KeyError(f"{unit} is not a valid unit in the registry")
-        match unit_class:
-            case "Length":
-                return Length
-            case "Mass":
-                return Mass
-            case "Time":
-                return Time
-            case "Temperature":
-                return Temperature
-            case "Current":
-                return Current
-            case "Amount":
-                return Amount
-            case "Energy":
-                return Energy
-            case "Pressure":
-                return Pressure
-            case "Force":
-                return Force
-            case "Volume":
-                return Volume
-            case _:
-                raise KeyError(f"UNIT REGISTRY is improperly formatted")
+        try:
+            return UNIT_CLASSES[unit_class]
+        except KeyError:
+            raise KeyError(f"UNIT REGISTRY is improperly formatted")
+        # match unit_class:
+        #     case "Length":
+        #         return Length
+        #     case "Mass":
+        #         return Mass
+        #     case "Time":
+        #         return Time
+        #     case "Temperature":
+        #         return Temperature
+        #     case "Current":
+        #         return Current
+        #     case "Amount":
+        #         return Amount
+        #     case "Energy":
+        #         return Energy
+        #     case "Pressure":
+        #         return Pressure
+        #     case "Force":
+        #         return Force
+        #     case "Volume":
+        #         return Volume
+        #     case _:
+        #         raise KeyError(f"UNIT REGISTRY is improperly formatted")
         
         
     def get_exponent_total(self)-> float:
@@ -1144,8 +1164,8 @@ class Temperature(Unit):
         "R": lambda x: x * 1.8,
     }
     def __init__(self, value:float, unit: TemperateUnits="K", exponent: int =1):
-        if unit not in TemperateUnits:
-            raise TypeError(f"The unit of {unit} is not valid for temperature")
+        # if unit not in TemperateUnits:
+        #     raise TypeError(f"The unit of {unit} is not valid for temperature")
         super().__init__(value, unit, exponent)
         
 class Pressure(Unit):
@@ -1203,7 +1223,7 @@ class Length(Unit):
         "km": lambda x: x/1000
         
     }
-    def __init__(self,value:float, unit: LengthUnit,
+    def __init__(self,value:float, unit: str,
                  exponent: int = 1):
         super().__init__(value, unit, exponent)
 
@@ -1354,4 +1374,15 @@ class Volume(Unit):
             super().__init__(value, unit, exponent)
     
         
-        
+UNIT_CLASSES = {
+    "Temperature": Temperature,
+    "Length": Length,
+    "Mass": Mass,
+    "Time": Time,
+    "Current": Current,
+    "Amount": Amount,
+    "Energy": Energy,
+    "Pressure": Pressure,
+    "Force": Force,
+    "Volume": Volume,
+}
