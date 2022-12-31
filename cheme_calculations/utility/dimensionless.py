@@ -1,7 +1,7 @@
 from xmlrpc.client import MultiCall
 from cheme_calculations.units.mass_transfer import DiffusionCoefficient
 from cheme_calculations.units.property_units import Cp, Density, DynamicViscosity, Gravity, Velocity
-from cheme_calculations.units.units import Length, Temperature
+from cheme_calculations.units.units import Length, Temperature, Unit
 from cheme_calculations.units.heat_transfer import ThermalConductivity, HeatTransferCoefficient
 
 __all__ = ["reynolds", "biot", "prandtl", "schmidt", "gretz", "grashof"]
@@ -93,6 +93,8 @@ def gretz(diameter: Length, length: Length, cp: Cp, characteristic_length: Lengt
     
     return (cp*diameter*characteristic_length*rho*characteristic_speed)/(k*length)
 
+
+
 def grashof(g: Gravity, beta: Temperature, T2: Temperature, T1: Temperature, L: Length, 
             rho: Density, mu: DynamicViscosity)-> float:
     """_summary_
@@ -131,3 +133,25 @@ def grashof(g: Gravity, beta: Temperature, T2: Temperature, T1: Temperature, L: 
     """
     
     return (L**3*rho**2*beta*(T2-T1)*g)/(mu**2)
+
+def beta(rho_1: Density, rho_2: Density,
+         T2: Temperature, T1: Temperature)-> Unit:
+    """Calculates the beta variable for use in calculating the 
+    Grashof number of a fluid
+    
+    .. math:: \beta = \dfrac{\rho_1- \rho_2}{\rho * (T_2 - T_1)}
+
+    :param rho_1: Density at temperature 1
+    :type rho_1: Density
+    :param rho_2: Density at temperature 2
+    :type rho_2: Density
+    :param T2: Hotter temperature in the system
+    :type T2: Temperature
+    :param T1: Cooler temperature in the system
+    :type T1: Temperature
+    :return: The beta variable, units of temperature^-1
+    :rtype: Unit
+    """
+    beta = (rho_1-rho_2)/(((rho_1+rho_2)/2)*(T2-T1))
+    
+    return beta
