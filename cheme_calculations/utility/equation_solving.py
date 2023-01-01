@@ -13,7 +13,7 @@ class SolutionNotSupported(Exception):
 class OverSpecifiedProblem(Exception):
     pass
 
-def solvable_for(solvable: List[str]):
+def solvable_for(solvable: List[str], unknowns: int=1):
     """Decorator function that helps determine what an equation should be solved for 
     and if that is a valid thing to solve for 
 
@@ -26,12 +26,11 @@ def solvable_for(solvable: List[str]):
             
             arg_names = getfullargspec(func).args
             
-            arg_dict = {k:v for k,v in zip(arg_names, args)}
+            defaults = getfullargspec(func).defaults
             
-            # check if default solve was given a value
-            default_given = 0
-            if len(args) == len(arg_names):
-                default_given = 1
+            full_args = args + tuple(kwargs.values()) + defaults
+            
+            arg_dict = {k:v for k,v in zip(arg_names, full_args)}
             
             # check for improper None's
             for k, v in arg_dict.items():
@@ -39,19 +38,25 @@ def solvable_for(solvable: List[str]):
                     raise SolutionNotSupported(f"Solving for {k} is not supported")
             
             # check for proper amount of None's 
-            if (args.count(None) + 1 - default_given) > 1:
+            if (full_args.count(None)) > unknowns:
                 raise UnsolvableEquation("Please supply more known parameters")
             
             # check for over specification
-            if (args.count(None) + default_given) == 1:
+            if (args.count(None)) < unknowns:
                 raise OverSpecifiedProblem("There are too many parameters supplied to this function")
             
             # get thing were solving for 
             # initial set to default
-            solving_for = arg_names[-1]
-            for k, v in arg_dict.items():
-                if v == None:
-                    solving_for = k
+            if unknowns == 1:
+                solving_for = arg_names[-1]
+                for k, v in arg_dict.items():
+                    if v == None:
+                        solving_for = k
+            else:
+                solving_for = []
+                for k, v in arg_dict.items():
+                    if v == None:
+                        solving_for.append(k)
                     
                 
                     

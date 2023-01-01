@@ -6,7 +6,7 @@ from cheme_calculations.units.property_units import DynamicViscosity
 __all__ = ["htc_open_field_laminar_local", "htc_open_field_laminar_avg", "wall_viscosity_correction_factor",
            "htc_open_field_turbulent_avg", "htc_open_field_turbulent_local", 
            "htc_pipe_laminar", "htc_pipe_turbulent", "htc_cross_cylinder",
-           "htc_cross_sphere"]
+           "htc_cross_sphere", "htc_short_pipe_correction"]
 
 def wall_viscosity_correction_factor(mu: DynamicViscosity, mu_wall: DynamicViscosity)-> float:
     """Calculates a correction factor used in heat transfer coefficient calculations to
@@ -376,3 +376,34 @@ def htc_cross_sphere(Re: float, Pr: float, diameter: Length,
     h = (Nu * k)/diameter
     
     return h
+
+def htc_short_pipe_correction(h: HeatTransferCoefficient, diameter: Length, L: Length)-> HeatTransferCoefficient:
+    """Calculates a new heat transfer coefficient for a short
+    pipe based on a coefficient that was calculated for a pipe in general.
+    Used when the 
+    
+    .. math:: h = h_\infty * (1 + \dfrac({diameter}{length})^{0.7})
+
+    :param h: A heat transfer coefficient calculated for the pipe independent of its length
+    :type h: HeatTransferCoefficient
+    :param diameter: Diameter of the pipe
+    :type diameter: Length
+    :param L: Length of the pipe
+    :type L: Length
+    :return: A new corrected heat transfer coefficient
+    :rtype: HeatTransferCoefficient
+    
+    :Example:
+    
+    >>> from cheme_calculations.heat_transfer import htc_short_pipe_correction
+    >>> h = HeatTransferCoefficient(400, "W/m^2*K")
+    >>> diameter = Length(1, "m")
+    >>> L = Length(1, "m")
+    >>> ans = htc_short_pipe_correction(h, diameter, L)
+    >>> print(ans)
+    >>> 800.0 W / m² * K
+    """
+    
+    h_new = h*(1+(diameter/L)**(0.7))
+    
+    return h_new

@@ -35,7 +35,18 @@ k = ThermalConductivity(0.6, "kW/m*K")
 
 
 
+from cheme_calculations.mass_transfer import three_d_pulse_decay
 
+mo = Mass(2000, "kg")
+
+distance = Length(50, "m")
+
+D = DiffusionCoefficient(3E-3, "cm^2/s")
+
+time = Time(30000, "s")
+ans = three_d_pulse_decay(mo, distance, D, time, "cube")
+
+print(ans)
 
 
 

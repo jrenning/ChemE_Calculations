@@ -1,10 +1,13 @@
-from .units import BaseUnit, MultiUnit, Unit
+from .units import BaseUnit, Length, MultiUnit, Unit
 from typing import List, Literal
 
 class Area(Unit):
-    def __init__(self, value: float, unit: str):
-        unit, _ = unit.split("^")
-        super().__init__(value, unit, 2)
+    def __init__(self, value: float, unit: str, exponent: int=1):
+        if "^" in unit:
+            unit, exponent = unit.split("^")
+            super().__init__(value, unit, float(exponent))
+        else:
+            super().__init__(value, unit, exponent)
         
 class Velocity(MultiUnit):
     def __init__(self,value:float, unit: str, *, top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit] = []):
