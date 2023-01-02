@@ -20,6 +20,13 @@ class UnitConversionError(Exception):
 class UnknownPrefix(Exception):
     pass
 
+class IncorrectUnits(Exception):
+    pass
+
+
+
+    
+
 
 # micro, milli, centi, deci, kilo, mega
 prefixes = ["u", "m", "c", "d", "k", "M"]
@@ -1386,3 +1393,23 @@ UNIT_CLASSES = {
     "Force": Force,
     "Volume": Volume,
 }
+
+def check_units(u: Unit | MultiUnit, unit_check: str, name: str)-> bool:
+    # if not a unit class assume units are correct
+    if u.__class__ not in [Unit, MultiUnit] and u.__class__.__bases__[0] not in [Unit, MultiUnit]:
+        return
+    
+    if u.__class__ == Unit or u.__class__.__bases__[0] == Unit:
+        if u._unit == unit_check:
+            return 
+        else:
+           raise IncorrectUnits(f"Please supply the correct units of {unit_check} instead of {u._unit} for {name}") 
+    else:
+        top_check, bottom_check = u.parse_units(unit_check)
+        
+        if u._top_half == top_check and u._bottom_half == bottom_check:
+            return 
+        else:
+            raise IncorrectUnits(f"Please supply the correct units of {unit_check} instead of {u._unit} for {name}") 
+        
+    

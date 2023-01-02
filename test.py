@@ -6,7 +6,7 @@ from cheme_calculations.heat_transfer.radiation import radiative_heat_flow
 from cheme_calculations.heat_transfer.steady_state_conduction import planar_flux
 from cheme_calculations.units import Temperature, Length, Time, ThermalConductivity, HeatTransferCoefficient
 from cheme_calculations.units.mass_transfer import Concentration, DiffusionCoefficient
-from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, Velocity 
+from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, MolecularWeight, Velocity 
 from cheme_calculations.units.units import BaseUnit, Force, Mass, MultiUnit, Pressure, Volume
 
 from cheme_calculations.thermodynamics.cubic_equations import peng_robinson, rendlich_kwong, soave_rendlich_kwong, van_der_waals
@@ -35,17 +35,14 @@ k = ThermalConductivity(0.6, "kW/m*K")
 
 
 
-from cheme_calculations.mass_transfer import three_d_pulse_decay
-
-mo = Mass(2000, "kg")
-
-distance = Length(50, "m")
-
-D = DiffusionCoefficient(3E-3, "cm^2/s")
-
-time = Time(30000, "s")
-ans = three_d_pulse_decay(mo, distance, D, time, "cube")
-
+from cheme_calculations.mass_transfer import fullers
+T = Temperature(300, "K")
+P = Pressure(1, "atm")
+Ma = MolecularWeight(30) # defaults to g/mol
+Mb = MolecularWeight(40)
+Ev_A = MultiUnit(56, "cm^3/mol")
+Ev_B = MultiUnit(24, "cm^3/mol")
+ans = fullers(T, P, Ma, Mb, Ev_A, Ev_B)
 print(ans)
 
 

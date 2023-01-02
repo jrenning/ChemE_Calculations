@@ -71,6 +71,13 @@ class Hvap(MultiUnit):
         if top_half and bottom_half:
             super.__init__(value, top_half=top_half, bottom_half=bottom_half)
         super().__init__(value, unit)
+        
+        
+class MolecularWeight(MultiUnit):
+    def __init__(self,value:float, unit: str="g/mol", *, top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):
+        if top_half and bottom_half:
+            super.__init__(value, top_half=top_half, bottom_half=bottom_half)
+        super().__init__(value, unit)
 
 class SpecificVolume(MultiUnit):
     def __init__(self,value:float, unit: str="m^3/kg", *, top_half: List[BaseUnit]=[], bottom_half: List[BaseUnit]=[]):

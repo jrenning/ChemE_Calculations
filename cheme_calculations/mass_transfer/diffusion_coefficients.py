@@ -1,17 +1,20 @@
 from math import pi
-from re import L
 from cheme_calculations.units import Temperature, MultiUnit
 from cheme_calculations.units.mass_transfer import DiffusionCoefficient
-from cheme_calculations.units.property_units import DynamicViscosity
-from cheme_calculations.units.units import Length
+from cheme_calculations.units.property_units import DynamicViscosity, MolecularWeight
+from cheme_calculations.units.units import Length, Pressure, check_units
 from cheme_calculations.utility.constants import BOLTZMANS_CONSTANT, FARADAYS_CONSTANT
 
-__all__ = ["wilke_chang", "stokes_einstein", "ionic_diffusion_coefficient"]
+__all__ = ["wilke_chang", "stokes_einstein", "ionic_diffusion_coefficient", 
+           "fullers"]
         
 
 def wilke_chang(temperature: Temperature | float, theta_b: float, moleclar_weight_b: MultiUnit | float,
                 viscosity_b: MultiUnit | float, molecular_volume_a: MultiUnit | float)-> DiffusionCoefficient:
     """Calculates a liquid liquid diffusion coefficient based on the Wilke-Chnang equation
+    
+    
+    .. math:: D_{AB} = \dfrac{7.4E^{-8}T(\phi_b * M_B)^{1/2}}{\mu_B \nu_A^{0.6}}
     
     NOTE: This is an empirical equation so units must be correct
     - Temperature = F
@@ -127,3 +130,56 @@ def ionic_diffusion_coefficient(R: MultiUnit, T: Temperature, n_plus: int, n_min
     D = (R*T*((1/n_plus)+(1/n_minus)))/(FARADAYS_CONSTANT**2*((1/lambda_plus)+(1/lambda_minus)))
     
     return D
+
+def fullers(T: Temperature | float, P: Pressure | float, Ma: MolecularWeight | float, Mb: MolecularWeight | float,
+            Ev_A: MultiUnit | float, Ev_B: MultiUnit | float)-> DiffusionCoefficient:
+    """Calculates a diffusion coefficient for a gas in another gas using the Fuller equation.
+    NOTE: This is an empirical equation so pay special attention to the units (they will be checked in the function)
+
+    .. math:: \dfrac{0.00143T^{1/75}}{P M_{AB}^{0.5} * [(E_v)_A^{1/3} + (E_v)_B^{1/3}]^2}
+    :param T: Temperature in Kelvin
+    :type T: Temperature | float
+    :param P: Pressure in atm
+    :type P: Pressure | float
+    :param Ma: Molecular weight of species a
+    :type Ma: MolecularWeight | float
+    :param Mb: Molecular weight of species b 
+    :type Mb: MolecularWeight | float
+    :param Ev_A: Diffusion Volume for species a
+    :type Ev_A: MultiUnit | float
+    :param Ev_B: Diffusion Volume for species b
+    :type Ev_B: MultiUnit | float
+    :return: A diffusion coefficient in units of cm^2/s
+    :rtype: DiffusionCoefficient
+    
+    :Example:
+    
+    >>> from cheme_calculations.mass_transfer import fullers
+    >>> T = Temperature(300, "K")
+    >>> P = Pressure(1, "atm")
+    >>> Ma = MolecularWeight(30) # defaults to g/mol
+    >>> Mb = MolecularWeight(40)
+    >>> Ev_A = MultiUnit(56, "cm^3/mol")
+    >>> Ev_B = MultiUnit(24, "cm^3/mol")
+    >>> ans = fullers(T, P, Ma, Mb, Ev_A, Ev_B)
+    >>> print(ans)
+    >>> 0.11728697826326943 cm² / s
+    """
+    
+    check_units(T, "K", "Temperature")
+    check_units(P, "atm", "Pressure")
+    check_units(Ma, "g/mol", "Molecular Weight A")
+    check_units(Mb, "g/mol", "Molecular Weight B")
+    check_units(Ev_A, "cm^3/mol", "Diffusion Volume A")
+    check_units(Ev_B, "cm^3/mol", "Diffusion Volume B")    
+    
+    
+    M_AB = 2/((1/Ma)+(1/Mb))
+    
+    D_AB = (0.00143*T**(1.75))/(P*M_AB**(0.5)*((Ev_A)**(1/3)+(Ev_B)**(1/3))**2)
+    
+    
+    if D_AB.__class__ == MultiUnit:
+        # 10000 factor to offset the conversion made from kg to g and cm to m when that was not needed / allowed 
+        return DiffusionCoefficient(D_AB._value/10000, "cm^2/s")
+    return DiffusionCoefficient(D_AB, "cm^2/s")
