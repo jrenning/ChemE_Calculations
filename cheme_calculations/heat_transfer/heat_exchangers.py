@@ -1,8 +1,8 @@
 from math import log, pi
 from cheme_calculations.units import Temperature
 from cheme_calculations.units.heat_transfer import ThermalConductivity
-from cheme_calculations.units.property_units import Area, Cp, DynamicViscosity
-from cheme_calculations.units.units import Length, MultiUnit
+from cheme_calculations.units.property_units import Cp, DynamicViscosity
+from cheme_calculations.units.units import Length, MultiUnit, Area
 from cheme_calculations.utility import solvable_for
 from cheme_calculations.utility.dimensionless import prandtl
 from cheme_calculations.utility.equation_solving import UnsolvableEquation

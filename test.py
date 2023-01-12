@@ -6,8 +6,8 @@ from cheme_calculations.heat_transfer.radiation import radiative_heat_flow
 from cheme_calculations.heat_transfer.steady_state_conduction import planar_flux
 from cheme_calculations.units import Temperature, Length, Time, ThermalConductivity, HeatTransferCoefficient
 from cheme_calculations.units.mass_transfer import Concentration, DiffusionCoefficient
-from cheme_calculations.units.property_units import Density, Cp, Area, DynamicViscosity, Gravity, Hvap, MolecularWeight, Velocity 
-from cheme_calculations.units.units import BaseUnit, Force, Mass, MultiUnit, Pressure, Volume
+from cheme_calculations.units.property_units import Density, Cp, DynamicViscosity, Gravity, Hvap, MolecularWeight, Velocity 
+from cheme_calculations.units.units import BaseUnit, Force, Mass, MultiUnit, Pressure, Volume, Area
 
 from cheme_calculations.thermodynamics.cubic_equations import peng_robinson, rendlich_kwong, soave_rendlich_kwong, van_der_waals
 
@@ -34,18 +34,13 @@ mu = MultiUnit(0.0007563, "kg/m*s")
 k = ThermalConductivity(0.6, "kW/m*K")
 
 
-
-from cheme_calculations.mass_transfer import fullers
-T = Temperature(300, "K")
-P = Pressure(1, "atm")
-Ma = MolecularWeight(30) # defaults to g/mol
-Mb = MolecularWeight(40)
-Ev_A = MultiUnit(56, "cm^3/mol")
-Ev_B = MultiUnit(24, "cm^3/mol")
-ans = fullers(T, P, Ma, Mb, Ev_A, Ev_B)
+from cheme_calculations.reactions import balance_equation
+# ans = balance_equation("Cu2S + HNO3 -> Cu(NO3)2 + CuSO4 + NO2 + H2O")
+ans = balance_equation("K4Fe(CN)6 + KMnO4 + H2SO4 -> KHSO4 + Fe2(SO4)3 + MnSO4 + HNO3 + CO2 + H2O")
+# ans = balance_equation("Al + O2 -> Al2O3")
+# ans = balance_equation("KI + Pb(NO3)2 -> KNO3 + PbI2")
+# ans = balance_equation("H3PO4 + (NH4)2MoO4 + HNO3 -> (NH4)3PO4Mo12O36 + NH4NO3 + H2O")
 print(ans)
-
-
 
 
 

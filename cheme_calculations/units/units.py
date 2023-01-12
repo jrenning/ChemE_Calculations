@@ -3,13 +3,14 @@ from pprint import pprint
 from typing import Any, Callable, Literal, TypeVar, Generic, Union, List
 from copy import deepcopy
 from collections import defaultdict
+
 from ._utility import remove_zero, to_sup, get_prefix
 
 
 
 
 __all__ = ["Unit", "MultiUnit", "BaseUnit", "Temperature", "Pressure", 
-           "Mass", "Current", "Energy", "Time", "Length","Volume",  "UNIT_REGISTRY",
+           "Mass", "Current", "Energy", "Time", "Length","Volume","Area",  "UNIT_REGISTRY",
            "LengthUnits", "register_unit_from_existing"]
 
 T = TypeVar('T')
@@ -46,7 +47,7 @@ TemperatureDict = {k:"Temperature" for k in TemperateUnits}
 
 LengthUnits = ["m"]
 LengthUnits = [f"{x}{y}" for x in prefixes for y in LengthUnits]
-LengthUnits.extend(["m", "ft", "in"])
+LengthUnits.extend(["m", "ft", "in", "yd", "mile"])
 LengthDict = { k:"Length" for k in LengthUnits }
 
 CurrentUnits = ["A"]
@@ -75,10 +76,16 @@ ForceUnits = [f"{x}{y}" for x in prefixes for y in ForceUnits]
 ForceUnits.extend(["N", "lbf"])
 ForceDict = {k: "Force" for k in ForceUnits}
 
-VolumeUnits = ["m^3"]
+VolumeUnits = ["m^3", "L"]
 VolumeUnits = [f"{x}{y}" for x in prefixes for y in VolumeUnits]
 VolumeUnits.extend(["m^3", "ft^3", "L", "in^3"])
 VolumeDict = {k: "Volume" for k in VolumeUnits}
+
+AreaUnits = ["m^2"]
+AreaUnits = [f"{x}{y}" for x in prefixes for y in AreaUnits]
+AreaUnits.extend(["m^2", "ft^2", "acre", "in^2"])
+AreaDict = {k: "Area" for k in AreaUnits}
+
 
 AmountUnits = ["mol"]
 AmountDict = {"mol": "Amount"}
@@ -93,6 +100,7 @@ UNIT_REGISTRY = {
     **PressureDict,
     **ForceDict,
     **VolumeDict,
+    **AreaDict,
     **AmountDict,
 }
 
@@ -114,7 +122,7 @@ UNIT_SIMPLIFICATIONS = {
     "kg/s^3": "W/m^2",
 }
 
-UNIT_COMPOSITES = ["L"]
+UNIT_COMPOSITES = ["L", "acre"]
 
 def register_unit_from_existing(new_unit:str, existing_unit:str, to_func: Callable, from_func: Callable):
     unit_class = MultiUnit.get_unit_class(existing_unit)
@@ -1213,6 +1221,8 @@ class Length(Unit):
     to_standard_conversions = {
         "in": lambda x: (x/12)*0.3048,
         "ft": lambda x: x*0.3048,
+        "yd": lambda x: x*0.9144,
+        "mile": lambda x: x*1609.34,
         "um": lambda x: x/1E6,
         "mm": lambda x: x/1000,
         "cm": lambda x: x/100,
@@ -1223,6 +1233,8 @@ class Length(Unit):
     from_standard_conversions = {
         "in": lambda x: (x*12) * 3.28084,
         "ft": lambda x: x*3.28084,
+        "yd": lambda x: x/0.9144,
+        "mile": lambda x: x*1609.34,
         "um": lambda x: x*1E6,
         "mm": lambda x: x*1000,
         "cm": lambda x: x*100,
@@ -1353,6 +1365,11 @@ class Volume(Unit):
     # cube applied to unit value in convert function
     # ie actual L conversion is by a factor of 10 * 10 * 10
     to_standard_conversions = {
+        "uL": lambda x: x/1E-3,
+        "mL": lambda x: x/100,
+        "cL": lambda x: x/46.41588,
+        "dL": lambda x: x/21.544346,
+        "kL": lambda x: x,
         "L": lambda x: x/10,
         "um^3": lambda x: x/(1E6),
         "mm^3": lambda x: x/(1000),
@@ -1364,6 +1381,11 @@ class Volume(Unit):
     }
     # form standard unit to the target unit 
     from_standard_conversions = {
+        "uL": lambda x: x*1E-3,
+        "mL": lambda x: x*100,
+        "cL": lambda x: x*46.41588,
+        "dL": lambda x: x*21.544346,
+        "kL": lambda x: x,
         "L": lambda x: x*10,
         "um^3": lambda x: x*1E6,
         "mm^3": lambda x: x*(1000),
@@ -1379,7 +1401,29 @@ class Volume(Unit):
             super().__init__(value, unit, float(exponent))
         else:
             super().__init__(value, unit, exponent)
-    
+class Area(Unit):
+    standard = "m^2"
+        
+    to_standard_conversions = {
+            "acre": lambda x: x*(4046.873)**(1/2),
+            "in^2": lambda x: X*0.0254,
+            "ft^2": lambda x: x*0.3048,
+            "mile^2": lambda x: x*1609.344,
+        }
+        
+    from_standard_conversions = {
+            "acre": lambda x: x/(4046.873)**(1/2),
+            "in^2": lambda x: x/0.0254,
+            "ft^2": lambda x: x/0.3048,
+            "mile^2": lambda x: x/1609.344,
+        }
+    def __init__(self, value: float, unit: str, exponent: int=1):
+
+        if "^" in unit:
+            unit, exponent = unit.split("^")
+            super().__init__(value, unit, float(exponent))
+        else:
+            super().__init__(value, unit, exponent)   
         
 UNIT_CLASSES = {
     "Temperature": Temperature,
@@ -1392,6 +1436,7 @@ UNIT_CLASSES = {
     "Pressure": Pressure,
     "Force": Force,
     "Volume": Volume,
+    "Area": Area,
 }
 
 def check_units(u: Unit | MultiUnit, unit_check: str, name: str)-> bool:

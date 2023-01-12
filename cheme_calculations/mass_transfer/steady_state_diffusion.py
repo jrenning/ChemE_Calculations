@@ -1,8 +1,7 @@
 from math import log, pi
 from cheme_calculations.units import DiffusionCoefficient
 from cheme_calculations.units.mass_transfer import Concentration
-from cheme_calculations.units.property_units import Area
-from cheme_calculations.units.units import Length, MultiUnit
+from cheme_calculations.units.units import Length, MultiUnit, Area
 
 __all__ = ["planar_mass_transfer_steady_state", "planar_mass_flux_steady_state",
            "pipe_mass_transfer_steady_state", "sphere_mass_transfer_steady_state"]

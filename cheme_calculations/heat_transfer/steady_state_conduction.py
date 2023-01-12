@@ -1,7 +1,6 @@
 
 from cheme_calculations.units.heat_transfer import ThermalConductivity, Power, HeatFlux
-from cheme_calculations.units import Temperature, Length
-from cheme_calculations.units.property_units import Area
+from cheme_calculations.units import Temperature, Length, Area
 from cheme_calculations.utility import solvable_for
 from math import pi
 from typing import Union

@@ -151,6 +151,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "numpy"
+version = "1.24.1"
+description = "Fundamental package for array computing in Python"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[[package]]
 name = "packaging"
 version = "21.3"
 description = "Core utilities for Python packages"
@@ -398,7 +406,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "89a37003405fc644ae0033588e2ddb50eb6c999a5a7f15504e201560089caa3a"
+content-hash = "12cc903f879dd6e3ff2f2e8b7b1e0387d6ad4c2084c6d45aa4bd25d5b9ff296e"
 
 [metadata.files]
 alabaster = []
@@ -416,6 +424,7 @@ jinja2 = []
 markupsafe = []
 mypy = []
 mypy-extensions = []
+numpy = []
 packaging = []
 pluggy = []
 pygments = []

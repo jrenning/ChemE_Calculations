@@ -3,7 +3,7 @@ from typing import Literal
 from math import exp, pi
 
 from cheme_calculations.units.mass_transfer import Concentration, DiffusionCoefficient
-from cheme_calculations.units.property_units import Area
+from cheme_calculations.units import Area
 
 __all__ = ["three_d_pulse_decay", "two_d_pulse_decay", "one_d_pulse_decay"]
 
