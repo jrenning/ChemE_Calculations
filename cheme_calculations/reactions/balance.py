@@ -50,9 +50,83 @@ def _get_fraction_lcm(fraction_list: List[Fraction]):
 
 
     return Fraction(denominator/numerator).limit_denominator()
+
+
+def _parse_equation_side(side: List[str]):
+    
+    molecule_list = []
+    for molecule in side:
+    
+        paren_groups = re.findall(r"\(.+\)", molecule)
+
+        if paren_groups:
+            for paren_group in paren_groups:
+                
+                # add backslashes
+                paren_group = re.sub("\(", "\\(", paren_group)
+                paren_group = re.sub("\)", "\\)", paren_group)
+                
+                ## do workaround for now as regex is not working 
+                # TODO make this better
+                idx = molecule.index(")")
+                
+                # assume multiplier of less than 9
+                multiplier = int(molecule[idx+1])
+                
+                molecule_dict = defaultdict(lambda: 0)
+
+                molecule_dict = _get_chemical_dict(molecule_dict, paren_group, multiplier)
+                
+                molecule = re.sub(f"{paren_group}\d+", "", molecule)
+                
+                molecule_dict = _get_chemical_dict(molecule_dict, molecule, 1)
+                
+                molecule_list.append(molecule_dict)
+                
+            # go to next product 
+            continue
+                    
+        # pair them up 
+        molecule_dict = defaultdict(lambda: 0)
+        molecule_dict = _get_chemical_dict(molecule_dict, molecule, 1)
+        molecule_list.append(molecule_dict)
+        
+    return molecule_list
     
 
-def balance_equation(equation:str):
+def balance_equation(equation:str)-> str:
+    """Balances a string representing a chemical equation, returns the balanced 
+    equation in the simplest form possible with integer coefficients
+    
+    NOTE: The function assumes that there are no preexisting coefficients on the molecules, they will
+    be ignored in the balancing, so distribute them if necessary 
+    NOTE: Currently the function does not allow subscripts outside parentheses greater than 9 (this will be fixed later)
+    
+
+    :param equation: The string representing the equation to balance 
+    :type equation: str
+    :raises InvalidParentheses: Raises an error if the parentheses dont match in the equation ie missing one
+    :raises ImproperChemicalEquation: Raises an error if the equation is impossible to balance ie one side has an element the other doesn't
+    :return: The new balanced chemical equation
+    :rtype: str
+    
+    :Example:
+    
+    >>> from cheme_calculations.reactions import balance_equation
+    >>> eq1 = "Al + O2 -> Al2O3"
+    >>> eq2 = "KI + Pb(NO3)2 -> KNO3 + PbI2"
+    >>> eq3 = "H3PO4 + (NH4)2MoO4 + HNO3 -> (NH4)3PO4Mo12O36 + NH4NO3 + H2O"
+    >>> balanced1 = balance_equation(eq1)
+    >>> balanced2 = balance_equation(eq2)
+    >>> balanced3 = balance_equation(eq3)
+    >>> print(balanced1)
+    >>> 4.0 Al + 3.0 O2 -> 2.0 Al2O3
+    >>> print(balanced2)
+    >>> 2.0 KI + 1.0 Pb(NO3)2 -> 2.0 KNO3 + 1.0 PbI2
+    >>> print(balanced3)
+    >>> 1.0 H3PO4 + 12.0 (NH4)2MoO4 + 21.0 HNO3 -> 1.0 (NH4)3PO4Mo12O36 + 21.0 NH4NO3 + 12.0 H2O
+    
+    """
     # sample equation to parse 
     # C3H8 + O2 -> H2O + CO2
     # assume there are no existing coefficients
@@ -74,94 +148,12 @@ def balance_equation(equation:str):
     reactants = [x.strip() for x in reactants]
     products = [x.strip() for x in products]
     
-    # check if in parentheses
-    
-    #now we have C3H8, O2 and H2O, CO2
-    
-    reactant_list = []
-    product_list = []
-    
-   
-    product_dict = {}
-    
     # Cu2S + HNO3 -> Cu(NO3)2 + CuSO4 + NO2 + H2O
     
-  
-    for reactant in reactants:
-        
-        paren_groups = re.findall(r"\(.+\)", reactant)
-
-        if paren_groups:
-            for paren_group in paren_groups:
-                
-                # add backslashes
-                paren_group = re.sub("\(", "\\(", paren_group)
-                paren_group = re.sub("\)", "\\)", paren_group)
-                
-                ## do workaround for now as regex is not working 
-                # TODO make this better
-                idx = reactant.index(")")
-                
-                # assume multiplier of less than 9
-                multiplier = int(reactant[idx+1])
-                
-                reactant_dict = defaultdict(lambda: 0)
-
-                reactant_dict = _get_chemical_dict(reactant_dict, paren_group, multiplier)
-                
-                reactant = re.sub(f"{paren_group}\d+", "", reactant)
-                
-                reactant_dict = _get_chemical_dict(reactant_dict, reactant, 1)
-                
-                reactant_list.append(reactant_dict)
-                
-            # go to next product 
-            continue
-                    
-        # pair them up 
-        reactant_dict = defaultdict(lambda: 0)
-        reactant_dict = _get_chemical_dict(reactant_dict, reactant, 1)
-        reactant_list.append(reactant_dict)
-
-
-        
-    for product in products:
-        
-        paren_groups = re.findall(r"\(.+\)", product)
-
-        if paren_groups:
-            for paren_group in paren_groups:
-                
-                # add backslashes
-                paren_group = re.sub("\(", "\\(", paren_group)
-                paren_group = re.sub("\)", "\\)", paren_group)
-                
-                ## do workaround for now as regex is not working 
-                # TODO make this better
-                idx = product.index(")")
-                
-                # assume multiplier of less than 9
-                multiplier = int(product[idx+1])
-                
-                product_dict = defaultdict(lambda: 0)
-
-                product_dict = _get_chemical_dict(product_dict, paren_group, multiplier)
-                
-                product = re.sub(f"{paren_group}\d+", "", product)
-                
-                product_dict = _get_chemical_dict(product_dict, product, 1)
-                
-                product_list.append(product_dict)
-                
-            # go to next product 
-            continue
-                    
-        # pair them up 
-        product_dict = defaultdict(lambda: 0)
-        product_dict = _get_chemical_dict(product_dict, product, 1)
-        product_list.append(product_dict)
-        
+    reactant_list = _parse_equation_side(reactants)
     
+    product_list = _parse_equation_side(products)
+        
     # get unique products and reactants
     unique_reactants = list(set(chain.from_iterable(d.keys() for d in reactant_list)))
     unique_products = list(set(chain.from_iterable(d.keys() for d in product_list)))
@@ -197,7 +189,9 @@ def balance_equation(equation:str):
     # get lcm of all the fractions
     lcm = _get_fraction_lcm(x)
     
-    # pick high random int as the unsolved coefficient, higher reduces rounding error
+    # multiple represents the free variable in the matrix solution
+    # set the multiple to the lcm, this makes it so all the fractions are now integers (technically speaking
+    # , they are floats but can easily be cast to integers ie 4.0 -> 4)
     multiple = lcm
     sol = [x*multiple for x in x]
     sol.append(multiple)
@@ -209,7 +203,6 @@ def balance_equation(equation:str):
     
     react_coeff = sol[:len(reactants)]
     product_coeff = sol[len(reactants):]
-    
     
     # return string
     reactant_string = " + ".join([f"{x} {y}" for x,y in zip(react_coeff, reactants)])

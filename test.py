@@ -35,12 +35,18 @@ k = ThermalConductivity(0.6, "kW/m*K")
 
 
 from cheme_calculations.reactions import balance_equation
-# ans = balance_equation("Cu2S + HNO3 -> Cu(NO3)2 + CuSO4 + NO2 + H2O")
-ans = balance_equation("K4Fe(CN)6 + KMnO4 + H2SO4 -> KHSO4 + Fe2(SO4)3 + MnSO4 + HNO3 + CO2 + H2O")
-# ans = balance_equation("Al + O2 -> Al2O3")
-# ans = balance_equation("KI + Pb(NO3)2 -> KNO3 + PbI2")
-# ans = balance_equation("H3PO4 + (NH4)2MoO4 + HNO3 -> (NH4)3PO4Mo12O36 + NH4NO3 + H2O")
-print(ans)
+eq1 = "Al + O2 -> Al2O3"
+eq2 = "KI + Pb(NO3)2 -> KNO3 + PbI2"
+eq3 = "H3PO4 + (NH4)2MoO4 + HNO3 -> (NH4)3PO4Mo12O36 + NH4NO3 + H2O"
+balanced1 = balance_equation(eq1)
+balanced2 = balance_equation(eq2)
+balanced3 = balance_equation(eq3)
+print(balanced1)
+
+print(balanced2)
+
+print(balanced3)
+    
 
 
 
