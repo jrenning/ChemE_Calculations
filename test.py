@@ -19,23 +19,15 @@ from cheme_calculations.utility.get_chemical_properties import get_water_propert
 
 from cheme_calculations.process_safety import enclosure_concentration, ppm_to_other
 from cheme_calculations.utility import get_gas_constant
-M = MolecularWeight(65, "g/mol")
-Qm = MassFlowRate(.7, "g/s")
-Rg = get_gas_constant("K", "m^3", "Pa")
-T = Temperature(300, "K")
-k = 0.35
-Qv = VolumetricFlowrate(5, "m^3/s")
-P = Pressure(1, "atm").convert_to("Pa")
 
-cppm = enclosure_concentration(Qm, Rg, T, k, Qv, P, M)
-print(cppm)
-# 1514.820930364972
 
-# convert to another concentration
-C = ppm_to_other(cppm, Rg, T, P, M)
-print(C)
-# 0.4 g / m³
-    
+from cheme_calculations.reactions import integral_method
+
+
+time_data = [0, 10, 20, 30, 40]
+reaction_data = [0.624, 0.446, 0.318, 0.224, 0.164]
+ans = integral_method(time_data, reaction_data, (0, 4, .5))
+print(ans)
 
 
 

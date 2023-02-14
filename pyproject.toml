@@ -6,7 +6,7 @@ authors = ["jrenning"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "~3.10"
 numpy = "^1.24.1"
 
 [tool.poetry.dev-dependencies]
