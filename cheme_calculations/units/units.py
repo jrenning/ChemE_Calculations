@@ -376,7 +376,7 @@ class MultiUnit:
     @staticmethod
     def deconstruct_unit_prefixes(top_half: List[BaseUnit], bottom_half: List[BaseUnit])-> tuple:
         """Deconstructs a given top and bottom half of units to a representation without prefixes
-        and returns a factor to account for it 
+        and returns a factor to account for it
         
         :param top_half: The top half of the MultiUnit
         :type top_half: List[BaseUnit]

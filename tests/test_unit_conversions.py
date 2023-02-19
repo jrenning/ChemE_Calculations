@@ -28,6 +28,7 @@ def test_multi_unit_conversion(unit1, unit2, expected):
     assert(a == expected)
     
 @pytest.mark.parametrize("unit1,unit2,expected", [(Velocity(3, 'm^2/s'),"cm^2/s",Velocity(30000.0, 'cm^2/s')),
+                                                  (Volume(2, "m^3"), "dm^3", Volume(2000, "dm^3")),
                                                         ])
 def test_exponent_conversions(unit1, unit2, expected):
     a = unit1.convert_to(unit2)
