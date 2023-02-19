@@ -126,6 +126,9 @@ def arrhenius(order: float, A: float, Ea: ActivationEnergy, R: MultiUnit, T: Tem
         return 1/((log(k/A)*R)/-Ea)
     if solving_for == "A":
         return k/(exp(-Ea/R*T))
+    
+    
+
        
         
         

@@ -25,9 +25,14 @@ from pytest import approx
                                                         ])
 def test_multi_unit_conversion(unit1, unit2, expected):
     a = unit1.convert_to(unit2)
-    print(a.__class__)
-    print(expected)
     assert(a == expected)
+    
+@pytest.mark.parametrize("unit1,unit2,expected", [(Velocity(3, 'm^2/s'),"cm^2/s",Velocity(30000.0, 'cm^2/s')),
+                                                        ])
+def test_exponent_conversions(unit1, unit2, expected):
+    a = unit1.convert_to(unit2)
+    assert(a == expected)
+    
     
 @pytest.mark.parametrize("unit1,unit2,expected", [(Temperature(300, 'C'), "K", Temperature(573.15, "K")),
                                                         (Temperature(300, "C"), "F", Temperature(572, "F")),

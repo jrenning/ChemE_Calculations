@@ -5,3 +5,9 @@ class ActivationEnergy(MultiUnit):
 
 class KineticConstant(MultiUnit):
     pass
+
+class MolarFlowRate(MultiUnit):
+    pass
+
+class ReactionRate(MultiUnit):
+    pass
