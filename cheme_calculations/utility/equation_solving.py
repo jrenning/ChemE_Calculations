@@ -36,13 +36,13 @@ def solvable_for(solvable: List[str], unknowns: int=1):
             for k, v in arg_dict.items():
                 if k not in solvable and v == None:
                     raise SolutionNotSupported(f"Solving for {k} is not supported")
-            
+
             # check for proper amount of None's 
-            if (full_args.count(None)) > unknowns:
+            if (list(arg_dict.values()).count(None)) > unknowns:
                 raise UnsolvableEquation("Please supply more known parameters")
-            
+ 
             # check for over specification
-            if (args.count(None)) < unknowns:
+            if (list(arg_dict.values()).count(None)) < unknowns:
                 raise OverSpecifiedProblem("There are too many parameters supplied to this function")
             
             # get thing were solving for 

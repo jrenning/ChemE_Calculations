@@ -108,10 +108,10 @@ def planar_flux(k: ThermalConductivity, T1: Union[Temperature, None], T2: Union[
     >>> T1 = Temperature(500, "K")
     >>> T2 = Temperature(300, "K")
     >>> thickness = Length(1, "m")
-    >>> qA = planar_heat(k, T1, T2, thickness)
+    >>> qA = planar_flux(k, T1, T2, thickness)
     >>> print(qA)
     >>> 120.0 W / m²
-    >>> thickness = planar_heat(k, T1, T2, None,qA)
+    >>> thickness = planar_flux(k, T1, T2, None,qA)
     >>> print(thickness)
     >>> 1.0 m
     

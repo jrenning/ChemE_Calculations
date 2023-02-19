@@ -1,15 +1,21 @@
 
 
-from math import log
-from typing import List
+from math import exp, log
+from typing import List, Union
 import numpy as np
 from collections import namedtuple
+from cheme_calculations.units.mass_transfer import Concentration
+
+from cheme_calculations.utility import solvable_for
+
+from cheme_calculations.units.reactions import ActivationEnergy, KineticConstant
+from cheme_calculations.units.units import MultiUnit, Temperature, Time
 
 IntegralResults = namedtuple(
     'IntegralResults', ["order", "r_squared"]
 )
 
-__all__ = ["integral_method"]
+__all__ = ["integral_method", "arrhenius"]
 
 def integral_method(time_data: List, reaction_data: List, order_range: tuple)-> IntegralResults:
     """Uses the integral method to determine the reaction order for a particular reactant, 
@@ -57,7 +63,70 @@ def integral_method(time_data: List, reaction_data: List, order_range: tuple)-> 
     return IntegralResults(order, best_r_squared)
 
 
-            
+def _get_arrhenius_units(order: float):
+    if order == 0:
+        return "mol/L*s"
+    if order == 1:
+        return "s^-1"
+    else:
+        c = Concentration(1, "mol/L")
+        c = c**(1-order)
+        c = c/Time(1, "s")
+        return c.get_unit_string()
+        
+
+
+@solvable_for(["A", "Ea", "T", "k"], 1)
+def arrhenius(order: float, A: float, Ea: ActivationEnergy, R: MultiUnit, T: Temperature, k:KineticConstant=None, **kwargs)-> Union[KineticConstant
+                                                                                                                      ,ActivationEnergy,
+                                                                                                                      Temperature,
+                                                                                                                      float]:
+    """Solve for a variable in the arrhenius equation, defaults to solving for k
+    units for arrhenius constant and k are based off the order provided
+    NOTE: assumes units for reaction is in mol/L, can convert after for alternative units
+    
+    .. math:: k = Ae^{\frac{-Ea}{RT}}
+
+    :param A: The Arrhenius constant
+    :type A: float
+    :param Ea: The activation energy, typically kJ/mol
+    :type Ea: ActivationEnergy
+    :param R: The gas constant, units must match Ea
+    :type R: MultiUnit
+    :param T: The temperature of the system
+    :type T: Temperature
+    :param k: The kinetic constant, defaults to None
+    :type k: KineticConstant, optional
+    :return: The parameter not supplied to the function, k by default
+    :rtype: _type_
+    
+    :Example:
+    >>> from cheme_calculations.reactions import arrhenius
+    >>> from cheme_calculations.utility import get_gas_constant
+    >>> A = 1E19
+    >>> Ea = ActivationEnergy(89000, "J/mol")
+    >>> R = get_gas_constant(generic=True) # 8.314 J / mol*K
+    >>> T = Temperature(350, "K")
+    >>> k = arrhenius(1, A, Ea, R, T)
+    >>> print(k)
+    >>> 521191.74607982725 s-¹
+    >>> Ea = arrhenius(1, A, None, R, T, k)
+    >>> print(Ea)
+    >>> 89000.0 J / mol
+    """
+    # set units of A
+    A = MultiUnit(A, _get_arrhenius_units(order))
+    
+    solving_for = kwargs["solving_for"]
+    if solving_for == "k":
+        return A*exp(-Ea/(R*T))
+    if solving_for == "Ea":
+        return -log(k/A)*R*T
+    if solving_for == "T":
+        return 1/((log(k/A)*R)/-Ea)
+    if solving_for == "A":
+        return k/(exp(-Ea/R*T))
+       
         
         
         

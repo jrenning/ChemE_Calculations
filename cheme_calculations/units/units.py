@@ -921,19 +921,42 @@ class MultiUnit:
         else:
             return self.__class__(self._value*(left_factor/right_factor), unit)
         
-    def __repr__(self):
+    def get_unit_string(self):
         try:
             top_string = " * ".join(f"{x._unit}{to_sup(str(remove_zero(x._exponent)))}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
         except KeyError:
             top_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._top_half)
         if self._bottom_half:
-            try:
-                bottom_string = " * ".join(f"{x._unit}{to_sup(str(remove_zero(x._exponent)))}" if x._exponent != 1 else f"{x._unit}" for x in self._bottom_half)
-            except KeyError:
-                bottom_string = " * ".join(f"{x._unit}^{x._exponent}" if x._exponent != 1 else f"{x._unit}" for x in self._bottom_half)
-            return f"{self._value} {top_string} / {bottom_string}"
+            bottom_strings = []
+            for x in self._bottom_half:
+                # don't include exponent if its 1
+                if x._exponent == 1:
+                    bottom_strings.append(f"{x._unit}")
+                # if bottom has negative units flip them to the top
+                elif x._exponent < 0:
+                    try:
+                        # add * based on top string having anything in it 
+                        if top_string == "":  
+                            top_string += f"{x._unit}{to_sup(str(remove_zero(-x._exponent)))}"
+                        else:
+                            top_string += f" * {x._unit}{to_sup(str(remove_zero(-x._exponent)))}"
+                    # error for to_sup
+                    except KeyError:
+                        top_string += f" * {x._unit}^{-x._exponent}"
+                else:
+                    try: 
+                        bottom_strings.append(f"{x._unit}{to_sup(str(remove_zero(x._exponent)))}")
+                    except KeyError:
+                        bottom_strings.append(f"{x._unit}^{x._exponent}")
+            bottom_string = " * ".join(bottom_strings)
+            return f"{top_string} / {bottom_string}"
         else:
-            return f"{self._value} {top_string}"
+            return top_string
+        
+    def __repr__(self):
+        unit_string = self.get_unit_string()
+        return f"{self._value} {unit_string}"
+
     
     def __eq__(self, other):
         if self.__class__ == other.__class__:
